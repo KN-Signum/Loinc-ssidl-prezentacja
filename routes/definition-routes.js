@@ -19,4 +19,4 @@ router.get("/condition-definitions/:id", conditionDefinitionByIdController);
 router.get("/citations", citationsController);
 
 
-export const definitionRouter = Router();
+export default router;
