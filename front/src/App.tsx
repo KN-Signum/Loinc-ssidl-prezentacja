@@ -61,26 +61,25 @@ import { ScrollArea } from "./components/ui/scroll-area";
 import { Alert, AlertDescription, AlertTitle } from "./components/ui/alert";
 import { Label } from "./components/ui/label";
 import { RadioGroup, RadioGroupItem } from "./components/ui/radio-group";
+import { useGetActivityDefinitionsByTitle } from "./features/activityDefinition/Api";
 
 // --- Types ---
 interface ServiceDefinition {
   id: string;
   name: string;
-  code: string; // LOINC
+  code: string;
   laboratory: string;
   specimen: string;
   category: string;
   status: "active" | "inactive" | "unavailable";
-  // New Knowledge Base Fields
   description: string;
   containerType: string;
-  containerColor: string; // hex code
+  containerColor: string;
   patientPrep: string;
   stability: string;
   referenceRange: { gender: string; range: string }[];
 }
 
-// --- Mock Data ---
 const MOCK_DATA: ServiceDefinition[] = [
   {
     id: "1",
@@ -210,6 +209,9 @@ const LABORATORIES = Array.from(new Set(MOCK_DATA.map(d => d.laboratory))).sort(
 const SPECIMENS = Array.from(new Set(MOCK_DATA.map(d => d.specimen))).sort();
 
 export default function App() {
+  const {data,loading,error} = useGetActivityDefinitionsByTitle();
+  console.log(data,loading,error);
+  // --- State ---
   // Filters
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedLab, setSelectedLab] = useState<string>("all");
@@ -219,7 +221,7 @@ export default function App() {
   const [basket, setBasket] = useState<Set<string>>(new Set());
 
   // Drawers & Modals
-  const [detailsId, setDetailsId] = useState<string | null>(null); // For Knowledge Base Drawer
+  const [detailsId, setDetailsId] = useState<string | null>(null);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
 
   // Order Form State
@@ -427,26 +429,22 @@ export default function App() {
           </CardContent>
         </Card>
 
-        {/* Results Table */}
         <Card className="border-slate-200 shadow-sm">
           <div className="rounded-md">
             <Table>
               <TableHeader className="bg-slate-50">
                 <TableRow>
                   <TableHead className="w-[50px] text-center">
-                     {/* Checkbox Header could go here for Select All, simplifying for now */}
                   </TableHead>
                   <TableHead className="w-[300px]">Nazwa Badania & Kod</TableHead>
-                  <TableHead>Kategoria</TableHead>
                   <TableHead>Laboratorium</TableHead>
-                  <TableHead>Materiał</TableHead>
                   <TableHead className="w-[120px]">Status</TableHead>
                   <TableHead className="text-right">Baza Wiedzy</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredData.map((item) => {
-                  const isSelected = basket.has(item.id);
+                {data.map((item) => {
+                  const isSelected = basket.has(item.id)
                   return (
                     <TableRow 
                       key={item.id} 
@@ -456,35 +454,23 @@ export default function App() {
                         <Checkbox 
                           checked={isSelected}
                           onCheckedChange={() => toggleSelection(item.id)}
-                          aria-label={`Select ${item.name}`}
+                          aria-label={`Select ${item.title}`}
                         />
                       </TableCell>
                       <TableCell className="align-top">
                         <div className="flex flex-col gap-1">
                           <span className={`font-semibold transition-colors ${isSelected ? "text-blue-700" : "text-slate-900"}`}>
-                            {item.name}
+                            {item.title}
                           </span>
                           <span className="flex items-center gap-1 text-xs text-slate-500 font-mono">
                             <Activity className="h-3 w-3" />
-                            {item.code}
+                            {item.code.coding?.[0]?.code || "Brak kodu"}
                           </span>
                         </div>
                       </TableCell>
                       <TableCell className="align-top">
                         <div className="mt-1 inline-flex items-center rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-xs font-semibold text-slate-700">
-                          {item.category}
-                        </div>
-                      </TableCell>
-                      <TableCell className="align-top">
-                        <div className="flex items-start gap-2 mt-1">
-                          <Building2 className="h-4 w-4 text-slate-400 mt-0.5 shrink-0" />
-                          <span className="text-sm text-slate-700">{item.laboratory}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="align-top">
-                        <div className="flex items-center gap-2 mt-1">
-                          <TestTube2 className="h-4 w-4 text-slate-400 shrink-0" />
-                          <span className="text-sm text-slate-700">{item.specimen}</span>
+                          <TestTube2 className="mr-1 h-3 w-3 text-slate-500" />
                         </div>
                       </TableCell>
                       <TableCell className="align-top pt-4">
