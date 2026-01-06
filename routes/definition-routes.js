@@ -16,7 +16,7 @@ router.get("/specimen-definitions/:id", specimenDefinitionByIdController);
 
 router.get("/condition-definitions/:id", conditionDefinitionByIdController);
 
-router.get("/citations", citationsController);
+router.get("/citations/:observationID", citationsController);
 
 
 export default router;

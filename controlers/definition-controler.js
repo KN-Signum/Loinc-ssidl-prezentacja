@@ -52,17 +52,17 @@ export const conditionDefinitionByIdController = async (req, res) => {
 }
 export const citationsController =  async (req, res) => {
   try {
-    const { observationDefinitionId } = req.query;
+    const { observationID } = req.params;
 
-    if (!observationDefinitionId) {
+    if (!observationID) {
       return res.status(400).json({
-        error: "observationDefinitionId query parameter is required",
+        error: "observationID path parameter is required",
       });
     }
 
     const observationDefinition = await fetchFhirResource(
       "ObservationDefinition",
-      `/${observationDefinitionId}`,
+      `/${observationID}`,
     );
 
     const qualifiedValues = observationDefinition.qualifiedValue || [];
