@@ -1,4 +1,7 @@
-import { getActivityDefinitionsByTitle, fetchFhirResource } from "../services/fhir-service.js";
+import {
+  getActivityDefinitionsByTitle,
+  fetchFhirResource,
+} from "../services/fhir-service.js";
 
 export const activityDefinitionByTitleController = async (req, res) => {
   try {
@@ -9,7 +12,7 @@ export const activityDefinitionByTitleController = async (req, res) => {
     console.error("Error fetching activity definitions:", error);
     res.status(500).json({ error: error.message });
   }
-}
+};
 export const activityDefinitionByIdController = async (req, res) => {
   try {
     const { id } = req.params;
@@ -19,8 +22,8 @@ export const activityDefinitionByIdController = async (req, res) => {
     console.error("Error fetching activity definition:", error);
     res.status(500).json({ error: error.message });
   }
-}
-export const observationDefinitionByIdController =  async (req, res) => {
+};
+export const observationDefinitionByIdController = async (req, res) => {
   try {
     const { id } = req.params;
     const result = await fetchFhirResource("ObservationDefinition", `/${id}`);
@@ -29,7 +32,7 @@ export const observationDefinitionByIdController =  async (req, res) => {
     console.error("Error fetching observation definition:", error);
     res.status(500).json({ error: error.message });
   }
-}
+};
 export const specimenDefinitionByIdController = async (req, res) => {
   try {
     const { id } = req.params;
@@ -39,7 +42,7 @@ export const specimenDefinitionByIdController = async (req, res) => {
     console.error("Error fetching specimen definition:", error);
     res.status(500).json({ error: error.message });
   }
-}
+};
 export const conditionDefinitionByIdController = async (req, res) => {
   try {
     const { id } = req.params;
@@ -49,8 +52,8 @@ export const conditionDefinitionByIdController = async (req, res) => {
     console.error("Error fetching condition definition:", error);
     res.status(500).json({ error: error.message });
   }
-}
-export const citationsController =  async (req, res) => {
+};
+export const citationsController = async (req, res) => {
   try {
     const { observationID } = req.params;
 
@@ -92,7 +95,7 @@ export const citationsController =  async (req, res) => {
             "Citation",
             `/${citationId}`,
           );
-          statusCode = 200;
+          statusCode = citationResponse.status;
         } catch (error) {
           statusCode = 500;
         }
@@ -121,4 +124,5 @@ export const citationsController =  async (req, res) => {
     console.error("Error fetching citations:", error);
     res.status(500).json({ error: error.message });
   }
-}
+};
+
