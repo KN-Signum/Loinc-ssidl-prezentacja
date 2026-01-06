@@ -6,14 +6,15 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-const TOKEN_URL = "http://apps.tukan.online:8082/realms/ssidl/protocol/openid-connect/token";
+const TOKEN_URL =
+  "http://apps.tukan.online:8082/realms/ssidl/protocol/openid-connect/token";
 const FHIR_BASE_URL = "http://apps.tukan.online:8092/fhir";
 const CLIENT_ID = "signum-prez";
 const CLIENT_SECRET = "XzKuAg31gpdI2WQUzHi18f1nCqZboxEG";
 
 const buildAuthHeaders = (token) => ({
-  "Authorization": `Bearer ${token.access_token}`,
-  "Accept": "application/fhir+json"
+  Authorization: `Bearer ${token.access_token}`,
+  Accept: "application/fhir+json",
 });
 
 const fetchJson = async (url, options) => {
@@ -25,14 +26,14 @@ async function getToken() {
   return fetchJson(TOKEN_URL, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: `client_id=${CLIENT_ID}&client_secret=${CLIENT_SECRET}&grant_type=client_credentials`
+    body: `client_id=${CLIENT_ID}&client_secret=${CLIENT_SECRET}&grant_type=client_credentials`,
   });
 }
 
 async function fetchFhirResource(resourceType, suffix = "") {
   const token = await getToken();
   return fetchJson(`${FHIR_BASE_URL}/${resourceType}${suffix}`, {
-    headers: buildAuthHeaders(token)
+    headers: buildAuthHeaders(token),
   });
 }
 
@@ -62,19 +63,32 @@ const extractCanonicals = (items, pickCanonical) =>
     .filter(Boolean)
     .map((canonicalUrl) => ({
       id: transformCanonicalUrlToId(canonicalUrl),
-      resourceType: transformCanonicalUrlToResourceType(canonicalUrl)
+      resourceType: transformCanonicalUrlToResourceType(canonicalUrl),
     }));
 
 const getSpecimenDefinitionsFromActivityDefinition = (activityDefinition) =>
-  extractCanonicals(activityDefinition.specimenRequirement, (canonical) => canonical);
+  extractCanonicals(
+    activityDefinition.specimenRequirement,
+    (canonical) => canonical,
+  );
 
 const getObservationDefinitionsFromActivityDefinition = (activityDefinition) =>
-  extractCanonicals(activityDefinition.observationResultRequirement, (canonical) => canonical);
+  extractCanonicals(
+    activityDefinition.observationResultRequirement,
+    (canonical) => canonical,
+  );
 
 const getConditionsDefinitionsFromActivityDefinition = (activityDefinition) =>
-  extractCanonicals(activityDefinition.extension, (extension) => extension?.valueCanonical);
+  extractCanonicals(
+    activityDefinition.extension,
+    (extension) => extension?.valueCanonical,
+  );
 
-const fetchAndSaveDefinitions = async (activityDefinition, extractor, filenamePrefix) => {
+const fetchAndSaveDefinitions = async (
+  activityDefinition,
+  extractor,
+  filenamePrefix,
+) => {
   const definitions = extractor(activityDefinition);
   if (!definitions.length) {
     return;
@@ -82,23 +96,27 @@ const fetchAndSaveDefinitions = async (activityDefinition, extractor, filenamePr
 
   const fetched = await Promise.all(
     definitions.map(({ resourceType, id }) =>
-      fetchFhirResource(resourceType, `/${id}`)
-    )
+      fetchFhirResource(resourceType, `/${id}`),
+    ),
   );
 
   await writeToFile(`${filenamePrefix}_${activityDefinition.id}.json`, fetched);
 };
 
 async function getActivityDefinitionsByTitle(title) {
-  const context = "http://loinc-ssidl.umed.pl/fhir/ig/ssidl/CodeSystem/ssidl-definitionUseContext-CS|BW";
+  const context =
+    "http://loinc-ssidl.umed.pl/fhir/ig/ssidl/CodeSystem/ssidl-definitionUseContext-CS|BW";
   return fetchFhirResource(
     "ActivityDefinition",
-    `?context=${context}&title:contains=${title}`
+    `?context=${context}&title:contains=${title}`,
   );
 }
 
 const fetchActivityDefinition = async (id) => {
-  const activityDefinition = await fetchFhirResource("ActivityDefinition", `/${id}`);
+  const activityDefinition = await fetchFhirResource(
+    "ActivityDefinition",
+    `/${id}`,
+  );
   await writeToFile(`activityDefinition_${id}.json`, activityDefinition);
 };
 
@@ -161,6 +179,81 @@ app.get("/condition-definitions/:id", async (req, res) => {
   }
 });
 
+app.get("/citations", async (req, res) => {
+  try {
+    const { observationDefinitionId } = req.query;
+
+    if (!observationDefinitionId) {
+      return res.status(400).json({
+        error: "observationDefinitionId query parameter is required",
+      });
+    }
+
+    const observationDefinition = await fetchFhirResource(
+      "ObservationDefinition",
+      `/${observationDefinitionId}`,
+    );
+
+    const qualifiedValues = observationDefinition.qualifiedValue || [];
+
+    if (qualifiedValues.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    const citationsWithRanges = await Promise.all(
+      qualifiedValues.map(async (qv) => {
+        const citationReference = qv.extension?.find((ext) =>
+          ext.valueReference?.reference?.startsWith("Citation/"),
+        )?.valueReference?.reference;
+
+        if (!citationReference) {
+          return null;
+        }
+
+        const citationId = citationReference.split("/")[1];
+        const range = qv.range || null;
+
+        let citationResponse = null;
+        let statusCode = null;
+
+        try {
+          const response = await fetchFhirResource(
+            "Citation",
+            `/${citationId}`,
+          );
+
+          statusCode = response.status;
+          citationResponse = await response.json();
+        } catch (error) {
+          statusCode = 500;
+        }
+
+        if (statusCode !== 200) {
+          return {
+            message:
+              "Informacje źródłowe dla wartości referencyjnych badania laboratoryjnego są niedostępne.",
+            range,
+          };
+        }
+
+        return {
+          citation: citationResponse,
+          range,
+        };
+      }),
+    );
+
+    const filteredCitations = citationsWithRanges.filter(
+      (item) => item !== null,
+    );
+
+    res.status(200).json(filteredCitations);
+  } catch (error) {
+    console.error("Error fetching citations:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
@@ -168,7 +261,8 @@ app.listen(PORT, () => {
 
 const getDataFromServer = async () => {
   const searchTitle = "morf";
-  const activityDefinitionsBundle = await getActivityDefinitionsByTitle(searchTitle);
+  const activityDefinitionsBundle =
+    await getActivityDefinitionsByTitle(searchTitle);
   await writeToFile("activityDefinitionsRAW.json", activityDefinitionsBundle);
 
   const activityDefinitionEntries = activityDefinitionsBundle.entry || [];
@@ -179,11 +273,24 @@ const getDataFromServer = async () => {
 
   activityDefinitionEntries.forEach(async (entry) => {
     const { resource } = entry;
-    await fetchAndSaveDefinitions(resource, getSpecimenDefinitionsFromActivityDefinition, "specimenDefinitions");
-    await fetchAndSaveDefinitions(resource, getObservationDefinitionsFromActivityDefinition, "observationDefinitions");
-    await fetchAndSaveDefinitions(resource, getConditionsDefinitionsFromActivityDefinition, "conditionDefinitions");
+    await fetchAndSaveDefinitions(
+      resource,
+      getSpecimenDefinitionsFromActivityDefinition,
+      "specimenDefinitions",
+    );
+    await fetchAndSaveDefinitions(
+      resource,
+      getObservationDefinitionsFromActivityDefinition,
+      "observationDefinitions",
+    );
+    await fetchAndSaveDefinitions(
+      resource,
+      getConditionsDefinitionsFromActivityDefinition,
+      "conditionDefinitions",
+    );
     await fetchActivityDefinition(resource.id);
   });
 };
 
 getDataFromServer();
+
