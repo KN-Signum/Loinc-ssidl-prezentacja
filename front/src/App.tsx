@@ -1,21 +1,22 @@
 import React, { useState, useMemo } from "react";
-import { 
-  Search, 
-  FlaskConical, 
-  Building2, 
-  TestTube2, 
-  Activity, 
-  Info, 
+import {
+  Search,
+  FlaskConical,
+  Building2,
+  TestTube2,
+  Info,
   Filter,
   Stethoscope,
   ShoppingCart,
   AlertTriangle,
-  X,
   CheckCircle2,
-  Thermometer,
   Clock,
-  FileJson
+  FileJson,
+  Truck,
+  ClipboardList,
+  Activity,
 } from "lucide-react";
+
 import { Input } from "./components/ui/input";
 import { Button } from "./components/ui/button";
 import {
@@ -34,13 +35,7 @@ import {
   TableRow,
 } from "./components/ui/table";
 import { Badge } from "./components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "./components/ui/card";
+import { Card, CardContent } from "./components/ui/card";
 import {
   Sheet,
   SheetContent,
@@ -58,207 +53,77 @@ import {
 } from "./components/ui/dialog";
 import { Checkbox } from "./components/ui/checkbox";
 import { ScrollArea } from "./components/ui/scroll-area";
-import { Alert, AlertDescription, AlertTitle } from "./components/ui/alert";
 import { Label } from "./components/ui/label";
 import { RadioGroup, RadioGroupItem } from "./components/ui/radio-group";
+
 import { useGetActivityDefinitionsByTitle } from "./features/activityDefinition/Api";
+import { useGetSpecimenDefinition } from "./features/specimenDefinition/Api";
+import { useGetObservationDefinition } from "./features/observationDefinition/Api";
 
-// --- Types ---
-interface ServiceDefinition {
-  id: string;
-  name: string;
-  code: string;
-  laboratory: string;
-  specimen: string;
-  category: string;
-  status: "active" | "inactive" | "unavailable";
-  description: string;
-  containerType: string;
-  containerColor: string;
-  patientPrep: string;
-  stability: string;
-  referenceRange: { gender: string; range: string }[];
-}
-
-const MOCK_DATA: ServiceDefinition[] = [
-  {
-    id: "1",
-    name: "Morfologia krwi z rozmazem automatycznym",
-    code: "LOINC: 57021-8",
-    laboratory: "Diagnostyka Łódź - Centrum",
-    specimen: "Krew żylna (EDTA)",
-    category: "Hematologia",
-    status: "active",
-    description: "Podstawowe badanie diagnostyczne oceniające układ czerwonokrwinkowy, białokrwinkowy oraz płytki krwi. Umożliwia rozpoznanie niedokrwistości, infekcji, zaburzeń krzepnięcia i innych chorób hematologicznych.",
-    containerType: "Probówka z EDTA",
-    containerColor: "#8b5cf6", // Violet
-    patientPrep: "Być na czczo (8-12h). Unikać wysiłku fizycznego przed pobraniem.",
-    stability: "4h w temp. pokojowej, 24h w temp. 2-8°C",
-    referenceRange: [
-      { gender: "Kobiety", range: "3.5-5.0 mln/µl (RBC)" },
-      { gender: "Mężczyźni", range: "4.2-5.4 mln/µl (RBC)" },
-    ]
-  },
-  {
-    id: "2",
-    name: "Glukoza na czczo",
-    code: "LOINC: 1558-6",
-    laboratory: "Szpital Wojewódzki - Lab. Centralne",
-    specimen: "Osocze (Fluorek)",
-    category: "Biochemia",
-    status: "active",
-    description: "Oznaczenie stężenia glukozy we krwi żylnej. Podstawowe badanie w diagnostyce i monitorowaniu cukrzycy oraz zaburzeń metabolizmu węglowodanów.",
-    containerType: "Probówka z fluorkiem sodu",
-    containerColor: "#94a3b8", // Grey
-    patientPrep: "Bezwzględnie na czczo (min. 8h).",
-    stability: "24h w temp. pokojowej (po oddzieleniu osocza)",
-    referenceRange: [
-      { gender: "Dorośli", range: "70-99 mg/dl" },
-    ]
-  },
-  {
-    id: "3",
-    name: "TSH (Tyreotropina)",
-    code: "LOINC: 11580-8",
-    laboratory: "Diagnostyka Łódź - Centrum",
-    specimen: "Surowica",
-    category: "Immunochemia",
-    status: "active",
-    description: "Hormon tyreotropowy wydzielany przez przysadkę mózgową. Najczulszy wskaźnik czynności tarczycy (niedoczynności lub nadczynności).",
-    containerType: "Probówka na skrzep (aktywator)",
-    containerColor: "#ef4444", // Red
-    patientPrep: "Na czczo, rano (zmienność dobowa). Leki tarczycowe przyjąć po pobraniu.",
-    stability: "7 dni w temp. 2-8°C",
-    referenceRange: [
-      { gender: "Dorośli", range: "0.27 - 4.2 µIU/ml" },
-    ]
-  },
-  {
-    id: "4",
-    name: "Lipidogram (CHOL, HDL, LDL, TG)",
-    code: "LOINC: 24331-1",
-    laboratory: "Szpital Wojewódzki - Lab. Centralne",
-    specimen: "Surowica",
-    category: "Biochemia",
-    status: "active",
-    description: "Profil lipidowy obejmujący cholesterol całkowity, frakcje HDL, LDL oraz trójglicerydy. Kluczowy w ocenie ryzyka sercowo-naczyniowego.",
-    containerType: "Probówka na skrzep",
-    containerColor: "#ef4444", // Red
-    patientPrep: "Na czczo (10-12h). Dieta lekkostrawna dzień wcześniej.",
-    stability: "3 dni w temp. 2-8°C",
-    referenceRange: [
-      { gender: "Cholesterol całk.", range: "< 190 mg/dl" },
-      { gender: "LDL", range: "< 115 mg/dl (niskie ryzyko)" },
-    ]
-  },
-  {
-    id: "5",
-    name: "CRP (Białko C-reaktywne, ilościowo)",
-    code: "LOINC: 1988-5",
-    laboratory: "Centrum Medyczne 'Zdrowie'",
-    specimen: "Surowica",
-    category: "Immunochemia",
-    status: "unavailable",
-    description: "Białko ostrej fazy. Marker stanu zapalnego, infekcji bakteryjnych oraz uszkodzenia tkanek.",
-    containerType: "Probówka na skrzep",
-    containerColor: "#ef4444", // Red
-    patientPrep: "Na czczo nie jest bezwzględnie wymagane, ale zalecane.",
-    stability: "3 dni w temp. 2-8°C",
-    referenceRange: [
-      { gender: "Dorośli", range: "< 5 mg/l" },
-    ]
-  },
-  {
-    id: "6",
-    name: "Badanie ogólne moczu",
-    code: "LOINC: 24356-8",
-    laboratory: "Diagnostyka Łódź - Centrum",
-    specimen: "Mocz",
-    category: "Analityka Ogólna",
-    status: "active",
-    description: "Podstawowe badanie przesiewowe oceniające cechy fizykochemiczne moczu oraz osad. Pomocne w chorobach nerek, układu moczowego i chorobach metabolicznych.",
-    containerType: "Pojemnik na mocz (niesterylny)",
-    containerColor: "#eab308", // Yellowish mock
-    patientPrep: "Mocz poranny, ze środkowego strumienia, po higienie krocza.",
-    stability: "2h w temp. pokojowej",
-    referenceRange: [
-      { gender: "pH", range: "5.0 - 7.0" },
-      { gender: "Ciężar wł.", range: "1.015 - 1.025" },
-    ]
-  },
-  {
-    id: "7",
-    name: "Witamina D3 (25-OH)",
-    code: "LOINC: 62292-8",
-    laboratory: "Centrum Medyczne 'Zdrowie'",
-    specimen: "Surowica",
-    category: "Immunochemia",
-    status: "active",
-    description: "Metabolit 25-hydroksywitamina D. Odzwierciedla stan zaopatrzenia organizmu w witaminę D.",
-    containerType: "Probówka na skrzep",
-    containerColor: "#ef4444", // Red
-    patientPrep: "Bez specjalnego przygotowania.",
-    stability: "72h w temp. pokojowej",
-    referenceRange: [
-      { gender: "Optimum", range: "30 - 50 ng/ml" },
-    ]
-  },
+const LABORATORIES = [
+  "Diagnostyka Łódź",
+  "Szpital Wojewódzki",
+  "Lab. Centralne",
 ];
-
-const LABORATORIES = Array.from(new Set(MOCK_DATA.map(d => d.laboratory))).sort();
-const SPECIMENS = Array.from(new Set(MOCK_DATA.map(d => d.specimen))).sort();
+const SPECIMENS = ["Krew żylna", "Mocz", "Surowica", "Osocze"];
 
 export default function App() {
-  const {data,loading,error} = useGetActivityDefinitionsByTitle();
-  console.log(data,loading,error);
-  // --- State ---
-  // Filters
+  const { data: listData, loading: listLoading } =
+    useGetActivityDefinitionsByTitle("morf");
+
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedLab, setSelectedLab] = useState<string>("all");
   const [selectedSpecimen, setSelectedSpecimen] = useState<string>("all");
 
-  // Selection & Basket
   const [basket, setBasket] = useState<Set<string>>(new Set());
 
-  // Drawers & Modals
   const [detailsId, setDetailsId] = useState<string | null>(null);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
 
-  // Order Form State
   const [orderPriority, setOrderPriority] = useState("routine");
   const [patientName, setPatientName] = useState("");
   const [requesterName] = useState("Dr n. med. Jan Kowalski");
 
-  // --- Derived State ---
+  const specimenQuery = useGetSpecimenDefinition(detailsId);
+  const observationQuery = useGetObservationDefinition(detailsId);
+  const isDetailsLoading = specimenQuery.loading || observationQuery.loading;
+
+  // Filtering Logic
   const filteredData = useMemo(() => {
-    return MOCK_DATA.filter((item) => {
-      const matchesSearch = 
-        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.code.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesLab = selectedLab === "all" || item.laboratory === selectedLab;
-      const matchesSpecimen = selectedSpecimen === "all" || item.specimen === selectedSpecimen;
+    if (!listData) return [];
+
+    return listData.filter((item: any) => {
+      const title = item.title || item.name || "";
+      const code = item.code?.coding?.[0]?.code || item.code || "";
+
+      const matchesSearch =
+        title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        code.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesLab = selectedLab === "all" ? true : true;
+      const matchesSpecimen = selectedSpecimen === "all" ? true : true;
 
       return matchesSearch && matchesLab && matchesSpecimen;
     });
-  }, [searchTerm, selectedLab, selectedSpecimen]);
+  }, [searchTerm, selectedLab, selectedSpecimen, listData]);
 
   const basketItems = useMemo(() => {
-    return MOCK_DATA.filter(item => basket.has(item.id));
-  }, [basket]);
+    if (!listData) return [];
+    return listData.filter((item: any) => basket.has(item.id));
+  }, [basket, listData]);
 
   const basketGroups = useMemo(() => {
-    const groups: Record<string, ServiceDefinition[]> = {};
-    basketItems.forEach(item => {
-      if (!groups[item.laboratory]) groups[item.laboratory] = [];
-      groups[item.laboratory].push(item);
+    const groups: Record<string, any[]> = {};
+    basketItems.forEach((item: any) => {
+      const labName = item.laboratory || "Laboratorium Centralne";
+      if (!groups[labName]) groups[labName] = [];
+      groups[labName].push(item);
     });
     return groups;
   }, [basketItems]);
 
   const basketHasMultipleLabs = Object.keys(basketGroups).length > 1;
 
-  // --- Handlers ---
   const toggleSelection = (id: string) => {
     const newBasket = new Set(basket);
     if (newBasket.has(id)) {
@@ -269,52 +134,51 @@ export default function App() {
     setBasket(newBasket);
   };
 
-  const selectedService = detailsId ? MOCK_DATA.find(d => d.id === detailsId) : null;
-
   const generateServiceRequestJSON = () => {
-    // Generate simple FHIR-like JSON
-    const requests = Object.keys(basketGroups).map(labName => ({
+    const requests = Object.keys(basketGroups).map((labName) => ({
       resourceType: "ServiceRequest",
       status: "draft",
       intent: "order",
       priority: orderPriority,
-      requester: {
-        display: requesterName
-      },
-      subject: {
-        display: patientName || "Nieokreślony Pacjent"
-      },
-      performer: [
-        {
-          type: "Organization",
-          display: labName
-        }
-      ],
+      requester: { display: requesterName },
+      subject: { display: patientName || "Nieokreślony Pacjent" },
+      performer: [{ type: "Organization", display: labName }],
       code: {
-        coding: basketGroups[labName].map(item => ({
+        coding: basketGroups[labName].map((item: any) => ({
           system: "http://loinc.org",
-          code: item.code.replace("LOINC: ", ""),
-          display: item.name
-        }))
-      }
+          code: item.code?.coding?.[0]?.code || item.code || "UNKNOWN",
+          display: item.title || item.name,
+        })),
+      },
     }));
-    return JSON.stringify(requests.length === 1 ? requests[0] : requests, null, 2);
+    return JSON.stringify(
+      requests.length === 1 ? requests[0] : requests,
+      null,
+      2,
+    );
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "active":
-        return <Badge className="bg-emerald-600 hover:bg-emerald-700">Dostępne</Badge>;
+        return (
+          <Badge className="bg-emerald-600 hover:bg-emerald-700">
+            Dostępne
+          </Badge>
+        );
       case "unavailable":
-        return <Badge variant="secondary" className="text-slate-500">Niedostępne</Badge>;
+        return (
+          <Badge variant="secondary" className="text-slate-500">
+            Niedostępne
+          </Badge>
+        );
       default:
-        return <Badge variant="outline">Nieznany</Badge>;
+        return <Badge variant="outline">Aktywne</Badge>;
     }
   };
 
   return (
     <div className="min-h-screen bg-slate-50/50 font-sans text-slate-900 pb-32">
-      {/* --- Header --- */}
       <header className="sticky top-0 z-20 w-full border-b bg-white px-6 py-4 shadow-sm">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <div className="flex items-center gap-3">
@@ -327,8 +191,8 @@ export default function App() {
               </h1>
               <div className="flex items-center gap-2">
                 <span className="flex h-2 w-2 relative">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                 </span>
                 <p className="text-xs font-medium text-slate-500">
                   Baza Wiedzy: Połączono (FHIR R4)
@@ -338,7 +202,9 @@ export default function App() {
           </div>
           <div className="flex items-center gap-4">
             <div className="hidden text-right text-sm leading-tight text-slate-500 md:block">
-              <span className="block font-semibold text-slate-700">{requesterName}</span>
+              <span className="block font-semibold text-slate-700">
+                {requesterName}
+              </span>
               <span className="text-xs">Oddział Chorób Wewnętrznych</span>
             </div>
             <div className="h-9 w-9 rounded-full bg-blue-50 flex items-center justify-center border border-blue-100 text-blue-700">
@@ -348,37 +214,40 @@ export default function App() {
         </div>
       </header>
 
-      {/* --- Main Content --- */}
       <main className="mx-auto max-w-7xl p-6">
-        
-        <div className="mb-6 flex items-start justify-between">
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight text-slate-900">Tworzenie Zlecenia</h2>
-            <p className="mt-1 text-lg text-slate-600">
-              Wybierz badania z katalogu, aby utworzyć nowe zlecenie laboratoryjne.
-            </p>
-          </div>
+        <div className="mb-6">
+          <h2 className="text-3xl font-bold tracking-tight text-slate-900">
+            Tworzenie Zlecenia
+          </h2>
+          <p className="mt-1 text-lg text-slate-600">
+            Wybierz badania z katalogu, aby utworzyć nowe zlecenie
+            laboratoryjne.
+          </p>
         </div>
 
-        {/* Filters Card */}
         <Card className="border-slate-200 shadow-sm mb-6">
           <CardContent className="pt-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-end">
+              {/* Search */}
               <div className="flex-1 space-y-2">
-                <label className="text-sm font-medium leading-none">Szukaj badania</label>
+                <label className="text-sm font-medium leading-none">
+                  Szukaj badania
+                </label>
                 <div className="relative">
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
                   <Input
                     placeholder="Nazwa badania, kod LOINC..."
                     className="pl-9"
                     value={searchTerm}
-                    onChange={(e: { target: { value: any; }; }) => setSearchTerm(e.target.value)}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
               </div>
 
               <div className="w-full space-y-2 md:w-[280px]">
-                <label className="text-sm font-medium leading-none">Laboratorium</label>
+                <label className="text-sm font-medium leading-none">
+                  Laboratorium
+                </label>
                 <Select value={selectedLab} onValueChange={setSelectedLab}>
                   <SelectTrigger>
                     <div className="flex items-center gap-2 text-slate-600">
@@ -389,15 +258,22 @@ export default function App() {
                   <SelectContent>
                     <SelectItem value="all">Wszystkie laboratoria</SelectItem>
                     {LABORATORIES.map((lab) => (
-                      <SelectItem key={lab} value={lab}>{lab}</SelectItem>
+                      <SelectItem key={lab} value={lab}>
+                        {lab}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="w-full space-y-2 md:w-[240px]">
-                <label className="text-sm font-medium leading-none">Materiał</label>
-                <Select value={selectedSpecimen} onValueChange={setSelectedSpecimen}>
+                <label className="text-sm font-medium leading-none">
+                  Materiał
+                </label>
+                <Select
+                  value={selectedSpecimen}
+                  onValueChange={setSelectedSpecimen}
+                >
                   <SelectTrigger>
                     <div className="flex items-center gap-2 text-slate-600">
                       <FlaskConical className="h-4 w-4" />
@@ -407,20 +283,22 @@ export default function App() {
                   <SelectContent>
                     <SelectItem value="all">Wszystkie materiały</SelectItem>
                     {SPECIMENS.map((spec) => (
-                      <SelectItem key={spec} value={spec}>{spec}</SelectItem>
+                      <SelectItem key={spec} value={spec}>
+                        {spec}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
-               <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
+                className="shrink-0"
                 onClick={() => {
                   setSearchTerm("");
                   setSelectedLab("all");
                   setSelectedSpecimen("all");
                 }}
-                className="shrink-0"
               >
                 <Filter className="mr-2 h-4 w-4" />
                 Reset
@@ -434,64 +312,102 @@ export default function App() {
             <Table>
               <TableHeader className="bg-slate-50">
                 <TableRow>
-                  <TableHead className="w-[50px] text-center">
-                  </TableHead>
-                  <TableHead className="w-[300px]">Nazwa Badania & Kod</TableHead>
+                  <TableHead className="w-[50px] text-center"></TableHead>
+                  <TableHead className="w-[350px]">Nazwa Badania</TableHead>
+                  <TableHead className="w-[180px]">Kod (LOINC/Local)</TableHead>
                   <TableHead>Laboratorium</TableHead>
                   <TableHead className="w-[120px]">Status</TableHead>
                   <TableHead className="text-right">Baza Wiedzy</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.map((item) => {
-                  const isSelected = basket.has(item.id)
-                  return (
-                    <TableRow 
-                      key={item.id} 
-                      className={`group transition-colors ${isSelected ? "bg-blue-50/50 hover:bg-blue-50" : "hover:bg-slate-50/50"}`}
+                {listLoading ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={6}
+                      className="h-32 text-center text-slate-500"
                     >
-                      <TableCell className="text-center">
-                        <Checkbox 
-                          checked={isSelected}
-                          onCheckedChange={() => toggleSelection(item.id)}
-                          aria-label={`Select ${item.title}`}
-                        />
-                      </TableCell>
-                      <TableCell className="align-top">
-                        <div className="flex flex-col gap-1">
-                          <span className={`font-semibold transition-colors ${isSelected ? "text-blue-700" : "text-slate-900"}`}>
-                            {item.title}
+                      Ładowanie definicji...
+                    </TableCell>
+                  </TableRow>
+                ) : filteredData.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={6}
+                      className="h-32 text-center text-slate-500"
+                    >
+                      Nie znaleziono badań.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredData.map((item: any) => {
+                    const isSelected = basket.has(item.id);
+                    const codeDisplay =
+                      item.code?.coding?.[0]?.code || item.code || "Brak kodu";
+
+                    return (
+                      <TableRow
+                        key={item.id}
+                        className={`group transition-colors ${isSelected ? "bg-blue-50/50 hover:bg-blue-50" : "hover:bg-slate-50/50"}`}
+                      >
+                        <TableCell className="text-center">
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => toggleSelection(item.id)}
+                            aria-label={`Select ${item.title}`}
+                          />
+                        </TableCell>
+
+                        <TableCell className="align-middle">
+                          <span
+                            className={`font-semibold transition-colors ${isSelected ? "text-blue-700" : "text-slate-900"}`}
+                          >
+                            {item.title || item.name}
                           </span>
-                          <span className="flex items-center gap-1 text-xs text-slate-500 font-mono">
-                            <Activity className="h-3 w-3" />
-                            {item.code.coding?.[0]?.code || "Brak kodu"}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="align-top">
-                        <div className="mt-1 inline-flex items-center rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-xs font-semibold text-slate-700">
-                          <TestTube2 className="mr-1 h-3 w-3 text-slate-500" />
-                        </div>
-                      </TableCell>
-                      <TableCell className="align-top pt-4">
-                        {getStatusBadge(item.status)}
-                      </TableCell>
-                      <TableCell className="text-right align-middle">
-                        <Button variant="ghost" size="sm" onClick={() => setDetailsId(item.id)}>
-                          <Info className="mr-2 h-4 w-4" />
-                          Szczegóły
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                        </TableCell>
+
+                        <TableCell className="align-middle">
+                          <Badge
+                            variant="outline"
+                            className="px-2 py-1 font-mono text-xs bg-slate-50 text-slate-600 border-slate-200"
+                          >
+                            <Activity className="h-3 w-3 mr-1 inline-block" />
+                            {codeDisplay}
+                          </Badge>
+                        </TableCell>
+
+                        <TableCell className="align-middle">
+                          <div className="inline-flex items-center rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-xs font-semibold text-slate-700">
+                            <TestTube2 className="mr-1 h-3 w-3 text-slate-500" />
+                            {item.laboratory || "Lab. Centralne"}
+                          </div>
+                        </TableCell>
+
+                        <TableCell className="align-middle">
+                          {getStatusBadge(item.status || "active")}
+                        </TableCell>
+
+                        <TableCell className="text-right align-middle">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setDetailsId(item.id)}
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                          >
+                            <Info className="mr-2 h-4 w-4" />
+                            Szczegóły
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
               </TableBody>
             </Table>
           </div>
         </Card>
       </main>
 
-      {/* --- Fixed Basket / Order Summary Bar --- */}
       {basket.size > 0 && (
         <div className="fixed bottom-0 left-0 right-0 z-30 border-t bg-white p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
           <div className="mx-auto flex max-w-7xl items-start justify-between gap-6">
@@ -501,32 +417,34 @@ export default function App() {
                   <ShoppingCart className="h-4 w-4" />
                 </div>
                 <h3 className="font-semibold text-slate-900">
-                  Koszyk Zleceń ({basket.size} {basket.size === 1 ? 'badanie' : 'badania'})
+                  Koszyk Zleceń ({basket.size}{" "}
+                  {basket.size === 1 ? "badanie" : "badania"})
                 </h3>
               </div>
-              
               <div className="text-sm text-slate-500 line-clamp-1">
-                 Wybrano: {basketItems.map(i => i.name).join(", ")}
+                Wybrano:{" "}
+                {basketItems.map((i: any) => i.title || i.name).join(", ")}
               </div>
-              
               {basketHasMultipleLabs && (
                 <div className="mt-2 flex items-center gap-2 rounded-md bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800 border border-amber-200">
                   <AlertTriangle className="h-4 w-4" />
-                  Uwaga: Wybrano badania z {Object.keys(basketGroups).length} różnych laboratoriów. System wygeneruje oddzielne zlecenia.
+                  Uwaga: Wybrano badania z {
+                    Object.keys(basketGroups).length
+                  }{" "}
+                  różnych laboratoriów. System wygeneruje oddzielne zlecenia.
                 </div>
               )}
             </div>
-
             <div className="flex items-center gap-3 pt-1">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => setBasket(new Set())}
                 className="text-slate-600"
               >
                 Wyczyść
               </Button>
-              <Button 
-                size="lg" 
+              <Button
+                size="lg"
                 className="bg-blue-600 hover:bg-blue-700 shadow-sm"
                 onClick={() => setIsOrderModalOpen(true)}
               >
@@ -537,118 +455,143 @@ export default function App() {
         </div>
       )}
 
-      {/* --- Knowledge Base Drawer (Sheet) --- */}
-      <Sheet open={!!detailsId} onOpenChange={(open: any) => !open && setDetailsId(null)}>
-        <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
-          {selectedService && (
+      <Sheet
+        open={!!detailsId}
+        onOpenChange={(open: any) => !open && setDetailsId(null)}
+      >
+        <SheetContent className="w-full mx-4 sm:max-w-xl overflow-y-auto">
+          {isDetailsLoading ? (
+            <div className="flex h-full items-center justify-center flex-col gap-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <p className="text-sm text-slate-500">
+                Pobieranie definicji FHIR...
+              </p>
+            </div>
+          ) : (
             <>
-              <SheetHeader className="mb-6 space-y-1">
-                <Badge variant="outline" className="w-fit mb-2 text-blue-700 border-blue-200 bg-blue-50">
-                  FHIR: ActivityDefinition
-                </Badge>
+              <SheetHeader className="mb-1 space-y-1">
                 <SheetTitle className="text-2xl leading-tight">
-                  {selectedService.name}
+                  {observationQuery.data?.preferredReportName ||
+                    "Szczegóły Badania"}
                 </SheetTitle>
-                <SheetDescription className="flex items-center gap-2 text-base">
-                  <span className="font-mono text-slate-900">{selectedService.code}</span>
-                  <span>•</span>
-                  <span>{selectedService.category}</span>
-                </SheetDescription>
+                <Badge
+                  variant="outline"
+                  className="w-fit mb-2 text-blue-700 border-blue-200 bg-blue-50 font-mono"
+                >
+                  LOINC: {specimenQuery.data?.collectionCode || "N/A"}
+                </Badge>
               </SheetHeader>
-              
-              <div className="space-y-8">
-                {/* Section A: Clinical Significance */}
-                <section>
-                  <h4 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-500 mb-3">
-                    <Activity className="h-4 w-4" />
-                    Znaczenie Kliniczne
-                  </h4>
-                  <p className="text-slate-700 leading-relaxed text-sm">
-                    {selectedService.description}
-                  </p>
-                </section>
 
-                {/* Section B: Pre-analytical Factors */}
-                <section className="rounded-lg border border-slate-200 bg-slate-50/50 p-4">
-                  <h4 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">
-                    <FlaskConical className="h-4 w-4" />
-                    Faza Przedanalityczna
-                  </h4>
-                  
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    {/* Container Type */}
-                    <div className="flex items-start gap-3">
-                      <div 
-                        className="h-10 w-10 shrink-0 rounded-full border-2 border-white shadow-sm flex items-center justify-center text-xs font-bold text-white"
-                        style={{ backgroundColor: selectedService.containerColor }}
-                        title={selectedService.containerType}
-                      >
+              <div className="space-y-8 ">
+                {specimenQuery.data && (
+                  <section className=" rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                    <h4 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">
+                      <ClipboardList className="h-4 w-4" />
+                      Przygotowanie Pacjenta
+                    </h4>
+                    {specimenQuery.data.patientPreparation.length > 0 ? (
+                      <ul className="space-y-2">
+                        {specimenQuery.data.patientPreparation.map(
+                          (text, idx) => (
+                            <li
+                              key={idx}
+                              className="flex gap-2 text-sm text-slate-700"
+                            >
+                              <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                              <span>{text}</span>
+                            </li>
+                          ),
+                        )}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-slate-500 italic">
+                        Brak specyficznych zaleceń.
+                      </p>
+                    )}
+                  </section>
+                )}
+
+                {specimenQuery.data && (
+                  <section className="rounded-lg border border-slate-200 bg-slate-50/50 p-4">
+                    <h4 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">
+                      <FlaskConical className="h-4 w-4" />
+                      Specyfikacja Materiału
+                    </h4>
+
+                    <div className="space-y-4">
+                      {/* Collection Type */}
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white border border-slate-200 text-blue-600 shadow-sm">
+                          <TestTube2 className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <span className="block text-xs font-semibold text-slate-500">
+                            Typ Materiału
+                          </span>
+                          <div className="text-sm font-medium text-slate-900">
+                            {specimenQuery.data.collectionSystem}
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <span className="block text-xs font-semibold text-slate-500">Pojemnik</span>
-                        <span className="text-sm font-medium text-slate-900">{selectedService.containerType}</span>
-                      </div>
+
+                      {specimenQuery.data.transportInstructions.length > 0 && (
+                        <div className="flex items-start gap-3 pt-2 border-t border-slate-200 mt-2">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600 shadow-sm border border-amber-100">
+                            <Truck className="h-5 w-5" />
+                          </div>
+                          <div className="flex-1">
+                            <span className="block text-xs font-semibold text-slate-500 mb-1">
+                              Warunki Transportu
+                            </span>
+                            <ul className="list-disc pl-4 space-y-1">
+                              {specimenQuery.data.transportInstructions.map(
+                                (instruction, idx) => (
+                                  <li
+                                    key={idx}
+                                    className="text-sm font-medium text-slate-900"
+                                  >
+                                    {instruction}
+                                  </li>
+                                ),
+                              )}
+                            </ul>
+                          </div>
+                        </div>
+                      )}
+
+                      {specimenQuery.data.stabilityInstructions.length > 0 && (
+                        <div className="flex items-start gap-3 pt-2 border-t border-slate-200 mt-2">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 shadow-sm border border-emerald-100">
+                            <Clock className="h-5 w-5" />
+                          </div>
+                          <div className="flex-1">
+                            <span className="block text-xs font-semibold text-slate-500 mb-1">
+                              Stabilność Materiału
+                            </span>
+                            <ul className="list-disc pl-4 space-y-1">
+                              {specimenQuery.data.stabilityInstructions.map(
+                                (instruction, idx) => (
+                                  <li
+                                    key={idx}
+                                    className="text-sm font-medium text-slate-900"
+                                  >
+                                    {instruction}
+                                  </li>
+                                ),
+                              )}
+                            </ul>
+                          </div>
+                        </div>
+                      )}
                     </div>
-
-                    {/* Stability */}
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-slate-600 shadow-sm border border-slate-100">
-                         <Clock className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <span className="block text-xs font-semibold text-slate-500">Stabilność</span>
-                        <span className="text-sm font-medium text-slate-900">{selectedService.stability}</span>
-                      </div>
-                    </div>
-
-                    {/* Patient Prep */}
-                    <div className="col-span-full flex items-start gap-3 pt-2">
-                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600 shadow-sm border border-amber-100">
-                         <AlertTriangle className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <span className="block text-xs font-semibold text-slate-500">Przygotowanie Pacjenta</span>
-                        <span className="text-sm font-medium text-slate-900">{selectedService.patientPrep}</span>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-
-                {/* Section C: Reference Ranges */}
-                <section>
-                   <h4 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-500 mb-3">
-                    <Thermometer className="h-4 w-4" />
-                    Zakresy Referencyjne
-                  </h4>
-                  <div className="rounded-md border border-slate-200">
-                    <Table>
-                      <TableHeader className="bg-slate-50">
-                        <TableRow className="h-8 hover:bg-slate-50">
-                          <TableHead className="h-8">Płeć / Grupa</TableHead>
-                          <TableHead className="h-8 text-right">Zakres</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {selectedService.referenceRange.map((range, idx) => (
-                          <TableRow key={idx} className="h-9">
-                            <TableCell className="py-2 font-medium">{range.gender}</TableCell>
-                            <TableCell className="py-2 text-right">{range.range}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                  <p className="mt-2 text-xs text-slate-400">
-                    * Wartości referencyjne mogą się różnić w zależności od metody analitycznej laboratorium.
-                  </p>
-                </section>
+                  </section>
+                )}
               </div>
             </>
           )}
         </SheetContent>
       </Sheet>
 
-      {/* --- Order Configuration Modal --- */}
       <Dialog open={isOrderModalOpen} onOpenChange={setIsOrderModalOpen}>
         <DialogContent className="sm:max-w-[700px]">
           <DialogHeader>
@@ -659,67 +602,73 @@ export default function App() {
           </DialogHeader>
 
           <div className="grid gap-6 py-4">
-             {/* Simple Form */}
-             <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                   <Label>Zlecający (Requester)</Label>
-                   <Input disabled value={requesterName} className="bg-slate-50" />
-                </div>
-                <div className="space-y-2">
-                   <Label>Pacjent (Subject)</Label>
-                   <Input 
-                      placeholder="Wyszukaj pacjenta (np. PESEL)" 
-                      value={patientName}
-                      onChange={(e) => setPatientName(e.target.value)}
-                   />
-                </div>
-             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Zlecający (Requester)</Label>
+                <Input disabled value={requesterName} className="bg-slate-50" />
+              </div>
+              <div className="space-y-2">
+                <Label>Pacjent (Subject)</Label>
+                <Input
+                  placeholder="Wyszukaj pacjenta (np. PESEL)"
+                  value={patientName}
+                  onChange={(e) => setPatientName(e.target.value)}
+                />
+              </div>
+            </div>
 
-             <div className="space-y-2">
-               <Label>Priorytet (Priority)</Label>
-               <RadioGroup 
-                  value={orderPriority} 
-                  onValueChange={setOrderPriority}
-                  className="flex gap-4"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="routine" id="r1" />
-                    <Label htmlFor="r1">Rutynowy</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="asap" id="r2" />
-                    <Label htmlFor="r2">Pilny (ASAP)</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="stat" id="r3" />
-                    <Label htmlFor="r3" className="text-red-600 font-semibold">CITO (STAT)</Label>
-                  </div>
-               </RadioGroup>
-             </div>
+            <div className="space-y-2">
+              <Label>Priorytet (Priority)</Label>
+              <RadioGroup
+                value={orderPriority}
+                onValueChange={setOrderPriority}
+                className="flex gap-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="routine" id="r1" />
+                  <Label htmlFor="r1">Rutynowy</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="asap" id="r2" />
+                  <Label htmlFor="r2">Pilny (ASAP)</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="stat" id="r3" />
+                  <Label htmlFor="r3" className="text-red-600 font-semibold">
+                    CITO (STAT)
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
 
-             {/* JSON Preview */}
-             <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>Podgląd zasobu FHIR (JSON)</Label>
-                  <Badge variant="outline" className="font-mono text-[10px]">FHIR R4 / JSON</Badge>
-                </div>
-                <div className="relative rounded-md border bg-slate-950 p-4 text-xs font-mono text-slate-50 shadow-inner">
-                  <FileJson className="absolute right-4 top-4 h-4 w-4 text-slate-500" />
-                  <ScrollArea className="h-[200px]">
-                    <pre className="whitespace-pre-wrap">
-                      {generateServiceRequestJSON()}
-                    </pre>
-                  </ScrollArea>
-                </div>
-             </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Podgląd zasobu FHIR (JSON)</Label>
+                <Badge variant="outline" className="font-mono text-[10px]">
+                  FHIR R4 / JSON
+                </Badge>
+              </div>
+              <div className="relative rounded-md border bg-slate-950 p-4 text-xs font-mono text-slate-50 shadow-inner">
+                <FileJson className="absolute right-4 top-4 h-4 w-4 text-slate-500" />
+                <ScrollArea className="h-[200px]">
+                  <pre className="whitespace-pre-wrap">
+                    {generateServiceRequestJSON()}
+                  </pre>
+                </ScrollArea>
+              </div>
+            </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsOrderModalOpen(false)}>Anuluj</Button>
-            <Button 
+            <Button
+              variant="outline"
+              onClick={() => setIsOrderModalOpen(false)}
+            >
+              Anuluj
+            </Button>
+            <Button
               className="bg-blue-600 hover:bg-blue-700"
               onClick={() => {
-                // Mock submit
                 setIsOrderModalOpen(false);
                 setBasket(new Set());
               }}
