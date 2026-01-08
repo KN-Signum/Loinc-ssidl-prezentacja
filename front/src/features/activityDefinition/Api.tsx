@@ -56,7 +56,7 @@ export const useGetActivityDefinition = (
 };
 
 export const useGetActivityDefinitionsByTitle = (
-  title: string = "morf",
+  title: string = "",
 ): UseActivityDefinitionsResult => {
   const [data, setData] = useState<ActivityDefinition[]>([]);
   const [loading, setLoading] = useState<boolean>(true);

@@ -1,12 +1,14 @@
 import {
-  getActivityDefinitionsByTitle,
   fetchFhirResource,
 } from "../services/fhir-service.js";
+import {
+  getActivityDefinitionsByTitle,
+} from "../services/activity-definition.js";
 
 export const activityDefinitionByTitleController = async (req, res) => {
   try {
-    const { title = "morf" } = req.query;
-    const result = await getActivityDefinitionsByTitle(title);
+    const { title = "morf", count = 10 } = req.query;
+    const result = await getActivityDefinitionsByTitle(title,count);
     res.status(200).json(result);
   } catch (error) {
     console.error("Error fetching activity definitions:", error);

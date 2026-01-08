@@ -7,12 +7,14 @@ const FHIR_BASE_URL = process.env.FHIR_BASE_URL;
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 
-const buildAuthHeaders = (token) => ({
-  Authorization: `Bearer ${token.access_token}`,
-  Accept: "application/fhir+json",
-});
+function buildAuthHeaders(token) {
+  return {
+    Authorization: `Bearer ${token.access_token}`,
+    Accept: "application/fhir+json",
+  };
+}
 
-const fetchJson = async (url, options) => {
+async function fetchJson(url, options) {
   const response = await fetch(url, options);
   return response.json();
 };
@@ -31,13 +33,23 @@ async function fetchFhirResource(resourceType, suffix = "") {
     headers: buildAuthHeaders(token),
   });
 }
+function transformCanonicalUrlToId(canonicalUrl) {
+  const parts = canonicalUrl.split("-");
+  return parts[parts.length - 1];
+};
 
-async function getActivityDefinitionsByTitle(title) {
-  const context = "http://loinc-ssidl.umed.pl/fhir/ig/ssidl/CodeSystem/ssidl-definitionUseContext-CS|BW";
-  return fetchFhirResource(
-    "ActivityDefinition",
-    `?context=${context}&title:contains=${title}`
-  );
+function transformCanonicalUrlToResourceType(canonicalUrl){
+  const parts = canonicalUrl.split("/");
+  return parts[parts.length - 2];
+};
+
+function extractCanonicals(items, pickCanonical) {
+  return (items || [])
+    .map((item) => pickCanonical(item))
+    .filter(Boolean)
+    .map((canonicalUrl) => ({
+      id: transformCanonicalUrlToId(canonicalUrl),
+      resourceType: transformCanonicalUrlToResourceType(canonicalUrl),
+}));
 }
-
-export { getToken, fetchFhirResource, getActivityDefinitionsByTitle };
+export { getToken, fetchFhirResource, extractCanonicals, transformCanonicalUrlToId, transformCanonicalUrlToResourceType, buildAuthHeaders, fetchJson };

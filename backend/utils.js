@@ -1,27 +1,8 @@
-const buildAuthHeaders = (token) => ({
-  Authorization: `Bearer ${token.access_token}`,
-  Accept: "application/fhir+json",
-});
-
-const fetchJson = async (url, options) => {
-  const response = await fetch(url, options);
-  return response.json();
-};
-
-async function getToken() {
-  return fetchJson(TOKEN_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: `client_id=${CLIENT_ID}&client_secret=${CLIENT_SECRET}&grant_type=client_credentials`,
-  });
-}
-
-async function fetchFhirResource(resourceType, suffix = "") {
-  const token = await getToken();
-  return fetchJson(`${FHIR_BASE_URL}/${resourceType}${suffix}`, {
-    headers: buildAuthHeaders(token),
-  });
-}
+import { fetchFhirResource } from "./services/fhir-service";
+import { getActivityDefinitionsByTitle, fetchActivityDefinition } from "./services/activity-definition";
+import { getConditionsDefinitionsFromActivityDefinition } from "./services/conditions";
+import { getObservationDefinitionsFromActivityDefinition } from "./services/observation";
+import { getSpecimenDefinitionsFromActivityDefinition } from "./services/specimen";
 
 const writeToFile = async (filename, data) => {
   const fs = await import("fs/promises");
@@ -32,43 +13,6 @@ const writeToFile = async (filename, data) => {
     console.error(`Error writing to file: ${error}`);
   }
 };
-
-const transformCanonicalUrlToId = (canonicalUrl) => {
-  const parts = canonicalUrl.split("-");
-  return parts[parts.length - 1];
-};
-
-const transformCanonicalUrlToResourceType = (canonicalUrl) => {
-  const parts = canonicalUrl.split("/");
-  return parts[parts.length - 2];
-};
-
-const extractCanonicals = (items, pickCanonical) =>
-  (items || [])
-    .map((item) => pickCanonical(item))
-    .filter(Boolean)
-    .map((canonicalUrl) => ({
-      id: transformCanonicalUrlToId(canonicalUrl),
-      resourceType: transformCanonicalUrlToResourceType(canonicalUrl),
-    }));
-
-const getSpecimenDefinitionsFromActivityDefinition = (activityDefinition) =>
-  extractCanonicals(
-    activityDefinition.specimenRequirement,
-    (canonical) => canonical,
-  );
-
-const getObservationDefinitionsFromActivityDefinition = (activityDefinition) =>
-  extractCanonicals(
-    activityDefinition.observationResultRequirement,
-    (canonical) => canonical,
-  );
-
-const getConditionsDefinitionsFromActivityDefinition = (activityDefinition) =>
-  extractCanonicals(
-    activityDefinition.extension,
-    (extension) => extension?.valueCanonical,
-  );
 
 const fetchAndSaveDefinitions = async (
   activityDefinition,
@@ -87,23 +31,6 @@ const fetchAndSaveDefinitions = async (
   );
 
   await writeToFile(`${filenamePrefix}_${activityDefinition.id}.json`, fetched);
-};
-
-async function getActivityDefinitionsByTitle(title) {
-  const context =
-    "http://loinc-ssidl.umed.pl/fhir/ig/ssidl/CodeSystem/ssidl-definitionUseContext-CS|BW";
-  return fetchFhirResource(
-    "ActivityDefinition",
-    `?context=${context}&title:contains=${title}`,
-  );
-}
-
-const fetchActivityDefinition = async (id) => {
-  const activityDefinition = await fetchFhirResource(
-    "ActivityDefinition",
-    `/${id}`,
-  );
-  await writeToFile(`activityDefinition_${id}.json`, activityDefinition);
 };
 
 const getDataFromServer = async () => {
