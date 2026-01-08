@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "../../../components/ui/select";
 import { Button } from "../../../components/ui/button";
+import { useGetLocationDefinitionLB, useGetLocationDefinitionPP } from "../../../features/locationDefinition/Api.ts";
 
 type SearchbarProps = {
   searchTerm: string;
@@ -24,7 +25,10 @@ const LABORATORIES = [
   "Lab. Centralne",
 ];
 const SPECIMENS = ["Krew żylna", "Mocz", "Surowica", "Osocze"];
+
 const Searchbar = (props: SearchbarProps) => {
+  const {data: laboratories} = useGetLocationDefinitionLB();
+  const {data: collectionPoints} = useGetLocationDefinitionPP();
   return (
     <Card className="border-slate-200 shadow-sm mb-6">
       <CardContent className="pt-6">
@@ -62,9 +66,9 @@ const Searchbar = (props: SearchbarProps) => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Wszystkie laboratoria</SelectItem>
-                {LABORATORIES.map((lab) => (
-                  <SelectItem key={lab} value={lab}>
-                    {lab}
+                {laboratories?.map((lab) => (
+                  <SelectItem key={lab.id} value={lab.id}>
+                    {lab.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -72,7 +76,7 @@ const Searchbar = (props: SearchbarProps) => {
           </div>
 
           <div className="w-full space-y-2 md:w-[240px]">
-            <label className="text-sm font-medium leading-none">Materiał</label>
+            <label className="text-sm font-medium leading-none">Punkty Pobrań</label>
             <Select
               value={props.selectedSpecimen}
               onValueChange={props.setSelectedSpecimen}
@@ -84,10 +88,10 @@ const Searchbar = (props: SearchbarProps) => {
                 </div>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Wszystkie materiały</SelectItem>
-                {SPECIMENS.map((spec) => (
-                  <SelectItem key={spec} value={spec}>
-                    {spec}
+                <SelectItem value="all">Wszystkie punkty pobrań</SelectItem>
+                {collectionPoints?.map((point) => (
+                  <SelectItem key={point.id} value={point.id}>
+                    {point.name}
                   </SelectItem>
                 ))}
               </SelectContent>

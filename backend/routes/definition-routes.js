@@ -2,8 +2,10 @@ import { Router } from "express";
 import {
     activityDefinitionByIdController, activityDefinitionByTitleController,
     citationsController, conditionDefinitionByIdController,
+    locationController,
     observationDefinitionByIdController, specimenDefinitionByIdController
 } from "../controlers/definition-controler.js";
+import { fetchFhirResource } from "../services/fhir-service.js";
 const router = Router();
 
 router.get("/activity-definitions", activityDefinitionByTitleController);
@@ -18,5 +20,11 @@ router.get("/condition-definitions/:id", conditionDefinitionByIdController);
 
 router.get("/citations/:observationID", citationsController);
 
+router.get("/locations/:type", locationController);
+
+router.get("/healthcare-services", async (req, res) => {
+    const healthcareServices = await fetchFhirResource("HealthcareService","?name:contains=a");
+    res.json(healthcareServices);
+});
 
 export default router;

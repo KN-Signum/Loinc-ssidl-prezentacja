@@ -32,10 +32,10 @@ import {
 import { ScrollArea } from "./components/ui/scroll-area";
 import { Label } from "./components/ui/label";
 import { RadioGroup, RadioGroupItem } from "./components/ui/radio-group";
-import { useGetSpecimenDefinition } from "./features/specimenDefinition/Api";
-import { useGetObservationDefinition } from "./features/observationDefinition/Api";
+import { useGetSpecimenDefinition } from "./features/specimenDefinition/Api.ts";
+import { useGetObservationDefinition } from "./features/observationDefinition/Api.ts";
 import MainTable from "./layoutComponents/ActivityDefinitionsTable/MainTable";
-import { useGetActivityDefinitionsByTitle } from "./features/activityDefinition/Api";
+import { useGetActivityDefinitionsByTitle } from "./features/activityDefinition/Api.ts";
 import Header from "./layoutComponents/header/Header";
 
 export default function App() {

@@ -128,3 +128,18 @@ export const citationsController = async (req, res) => {
   }
 };
 
+export const locationController = async (req, res) => {
+  try {
+    const { type } = req.params;
+    const context = type ==='lab' ? "http://hl7.org.pl/fhir/ig/pl-lab/CodeSystem/pl-lab-facilityTypeCS|LA" : "http://hl7.org.pl/fhir/ig/pl-lab/CodeSystem/pl-lab-facilityTypeCS|PP"
+    console.log(type)
+    const locations = await fetchFhirResource(
+      "Location",
+      `?type=${context}`,
+    )
+    res.status(200).json(locations.entry.map((entry) => entry.resource))
+  } catch (error) {
+    console.error("Error fetching locations:", error)
+    res.status(500).json({ error: error.message })
+  }
+};
