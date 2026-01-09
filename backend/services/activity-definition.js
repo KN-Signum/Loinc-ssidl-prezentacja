@@ -1,12 +1,12 @@
 import { fetchFhirResource, validateResponseForPagination } from "./fhir-service.js";
 
-export async function getActivityDefinitionsByTitle(title, count) {
-  console.log("Fetching ActivityDefinitions with title containing:", title, count);
+export async function getActivityDefinitionsByTitle(title) {
+  console.log("Fetching ActivityDefinitions with title containing:", title);
   const context =
     "http://loinc-ssidl.umed.pl/fhir/ig/ssidl/CodeSystem/ssidl-definitionUseContext-CS|BW";
   const result = await fetchFhirResource(
     "ActivityDefinition",
-    `?context=${context}&title:contains=${title}&_sort=title&_count=${count}`,
+    `?context=${context}&title:contains=${title}`,
   );
   
   const validatedResult = validateResponseForPagination(result);

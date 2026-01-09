@@ -8,15 +8,14 @@ import {
 
 export const activityDefinitionByTitleController = async (req, res) => {
   try {
-    const { title = "", count = 10, token } = req.query;
+    const { title = "", token } = req.query;
     console.log("Received title:", title);
-    console.log("Received count:", count);
     console.log("Received token:", token);
     if(token){
       const result = await fetchPaginatedFhirResource(token);
       return  res.status(200).json(result);
     }
-    const result = await getActivityDefinitionsByTitle(title,count);
+    const result = await getActivityDefinitionsByTitle(title);
     res.status(200).json(result);
   } catch (error) {
     console.error("Error fetching activity definitions:", error);

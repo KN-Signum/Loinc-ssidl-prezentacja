@@ -59,7 +59,7 @@ export default function App() {
     paginationTokenPrev,
     fetchNextPage,
     fetchPrevPage,
-  } = useGetActivityDefinitionsByTitle(searchTerm.length >= 3 ? searchTerm : "");
+  } = useGetActivityDefinitionsByTitle(searchTerm.length >= 1 ? searchTerm : "");
 
   const basketItems = useMemo(() => {
     if (!listData) return [];
