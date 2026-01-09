@@ -34,7 +34,8 @@ import { Label } from "./components/ui/label";
 import { RadioGroup, RadioGroupItem } from "./components/ui/radio-group";
 import { useGetSpecimenDefinition } from "./features/specimenDefinition/Api.ts";
 import { useGetObservationDefinition } from "./features/observationDefinition/Api.ts";
-import MainTable from "./layoutComponents/ActivityDefinitionsTable/MainTable";
+import BaseTable from "./layoutComponents/ActivityDefinitionsTable/BaseTable.tsx";
+import CatalogTable from "./layoutComponents/ActivityDefinitionsTable/CatalogTable.tsx";
 import { useGetActivityDefinitionsByTitle } from "./features/activityDefinition/Api.ts";
 import Header from "./layoutComponents/header/Header";
 
@@ -49,9 +50,16 @@ export default function App() {
   const observationQuery = useGetObservationDefinition(detailsId);
   const isDetailsLoading = specimenQuery.loading || observationQuery.loading;
   const [searchTerm, setSearchTerm] = useState("");
+  const [knowledgeBase, setKnowledgeBase] = useState<boolean>(true);
 
-  const { data: listData, loading: listLoading } =
-    useGetActivityDefinitionsByTitle(searchTerm.length >= 3 ? searchTerm : "");
+  const {
+    data: listData,
+    loading: listLoading,
+    paginationTokenNext,
+    paginationTokenPrev,
+    fetchNextPage,
+    fetchPrevPage,
+  } = useGetActivityDefinitionsByTitle(searchTerm.length >= 3 ? searchTerm : "");
 
   const basketItems = useMemo(() => {
     if (!listData) return [];
@@ -91,28 +99,32 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50/50 font-sans text-slate-900 pb-32">
-      <Header requesterName={requesterName} />
-
+      <Header requesterName={requesterName} knowledgeBase={knowledgeBase} setKnowledgeBase={setKnowledgeBase}/>
       <main className="mx-auto max-w-7xl p-6">
-        <div className="mb-6">
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900">
-            Tworzenie Zlecenia
-          </h2>
-          <p className="mt-1 text-lg text-slate-600">
-            Wybierz badania z katalogu, aby utworzyć nowe zlecenie
-            laboratoryjne.
-          </p>
-        </div>
-
-        <MainTable
-          listData={listData}
-          listLoading={listLoading}
-          basket={basket}
-          setBasket={setBasket}
-          setDetailsId={setDetailsId}
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-        />
+        {
+            knowledgeBase ? <BaseTable
+            listData={listData}
+            listLoading={listLoading}
+            basket={basket}
+            setBasket={setBasket}
+            setDetailsId={setDetailsId}
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            paginationTokenNext={paginationTokenNext}
+            paginationTokenPrev={paginationTokenPrev}
+            fetchNextPage={fetchNextPage}
+            fetchPrevPage={fetchPrevPage}
+          /> : <CatalogTable
+            listData={listData}
+            listLoading={listLoading}
+            basket={basket}
+            setBasket={setBasket}
+            setDetailsId={setDetailsId}
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+          />
+        }
+        
       </main>
 
       {basket.size > 0 && (

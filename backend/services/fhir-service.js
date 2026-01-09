@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import paginationCache from "../pagination-cache.js";
 
 dotenv.config();
 
@@ -17,7 +18,7 @@ function buildAuthHeaders(token) {
 async function fetchJson(url, options) {
   const response = await fetch(url, options);
   return response.json();
-};
+}
 
 async function getToken() {
   return fetchJson(TOKEN_URL, {
@@ -27,6 +28,53 @@ async function getToken() {
   });
 }
 
+function createPaginationToken() {
+  return (
+    Math.random().toString(36).substring(2, 15) +
+    Math.random().toString(36).substring(2, 15)
+  );
+}
+function addTokenToPaginationCache(link) {
+  const token = createPaginationToken();
+  console.log("Generated pagination token for next link:", token, link);
+  paginationCache.set(token, { link });
+  return token;
+}
+
+export function validateResponseForPagination(response) {
+  const nextLink = response.link?.find((l) => l.relation === "next")?.url;
+  const prevLink = response.link?.find((l) => l.relation === "prev")?.url;
+
+  let responseCopy = { ...response };
+  if(nextLink) {
+    const token = addTokenToPaginationCache(nextLink);
+    responseCopy = { ...responseCopy, paginationTokenNext: token };
+  }
+  if(prevLink){
+    const token = addTokenToPaginationCache(prevLink);
+    responseCopy = { ...responseCopy, paginationTokenPrev: token };
+  }
+  return responseCopy;
+}
+
+export async function fetchPaginatedFhirResource(token) {
+  const authToken = await getToken();
+  const headers = buildAuthHeaders(authToken);
+
+  const cachedData = paginationCache.get(token);
+  console.log("Fetched cached pagination data for token:", token, cachedData);
+  if (!cachedData)
+    return null;
+
+  const data = cachedData.link;
+  console.log("Fetching paginated FHIR resource from URL:", data);
+  const result = await fetchJson(data, {headers});
+  console.log("Fetched paginated FHIR resource:", result);
+  const validatedResult = validateResponseForPagination(result);
+  console.log("Validated paginated FHIR resource:", validatedResult);
+  return validatedResult;
+
+}
 async function fetchFhirResource(resourceType, suffix = "") {
   const token = await getToken();
   return fetchJson(`${FHIR_BASE_URL}/${resourceType}${suffix}`, {
@@ -36,12 +84,12 @@ async function fetchFhirResource(resourceType, suffix = "") {
 function transformCanonicalUrlToId(canonicalUrl) {
   const parts = canonicalUrl.split("-");
   return parts[parts.length - 1];
-};
+}
 
-function transformCanonicalUrlToResourceType(canonicalUrl){
+function transformCanonicalUrlToResourceType(canonicalUrl) {
   const parts = canonicalUrl.split("/");
   return parts[parts.length - 2];
-};
+}
 
 function extractCanonicals(items, pickCanonical) {
   return (items || [])
@@ -50,6 +98,14 @@ function extractCanonicals(items, pickCanonical) {
     .map((canonicalUrl) => ({
       id: transformCanonicalUrlToId(canonicalUrl),
       resourceType: transformCanonicalUrlToResourceType(canonicalUrl),
-}));
+    }));
 }
-export { getToken, fetchFhirResource, extractCanonicals, transformCanonicalUrlToId, transformCanonicalUrlToResourceType, buildAuthHeaders, fetchJson };
+export {
+  getToken,
+  fetchFhirResource,
+  extractCanonicals,
+  transformCanonicalUrlToId,
+  transformCanonicalUrlToResourceType,
+  buildAuthHeaders,
+  fetchJson,
+};

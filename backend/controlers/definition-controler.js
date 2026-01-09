@@ -1,5 +1,6 @@
 import {
   fetchFhirResource,
+  fetchPaginatedFhirResource,
 } from "../services/fhir-service.js";
 import {
   getActivityDefinitionsByTitle,
@@ -7,7 +8,14 @@ import {
 
 export const activityDefinitionByTitleController = async (req, res) => {
   try {
-    const { title = "morf", count = 10 } = req.query;
+    const { title = "", count = 10, token } = req.query;
+    console.log("Received title:", title);
+    console.log("Received count:", count);
+    console.log("Received token:", token);
+    if(token){
+      const result = await fetchPaginatedFhirResource(token);
+      return  res.status(200).json(result);
+    }
     const result = await getActivityDefinitionsByTitle(title,count);
     res.status(200).json(result);
   } catch (error) {

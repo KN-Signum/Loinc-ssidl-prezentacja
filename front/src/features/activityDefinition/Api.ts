@@ -14,6 +14,10 @@ interface UseActivityDefinitionsResult {
   data: ActivityDefinition[];
   loading: boolean;
   error: string | null;
+  paginationTokenNext: string | null;
+  paginationTokenPrev: string | null;
+  fetchNextPage: () => void;
+  fetchPrevPage: () => void;
 }
 
 export const useGetActivityDefinition = (
@@ -61,37 +65,60 @@ export const useGetActivityDefinitionsByTitle = (
   const [data, setData] = useState<ActivityDefinition[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [paginationTokenNext, setPaginationTokenNext] = useState<string | null>(null);
+  const [paginationTokenPrev, setPaginationTokenPrev] = useState<string | null>(null);
+
+  const fetchActivityDefinitions = async (pageToken?: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await axios.get(
+        `${API_BASE_URL}/activity-definitions`,
+        {
+          params: { title, token: pageToken },
+        },
+      );
+
+      const entries =
+        response.data.entry?.map(
+          (entry: any) => new ActivityDefinition(entry.resource),
+        ) || [];
+
+      setPaginationTokenNext(response.data.paginationTokenNext || null);
+      setPaginationTokenPrev(response.data.paginationTokenPrev || null);
+      setData(entries);
+    } catch (err: any) {
+      setError(
+        err.response?.data?.error ||
+          err.message ||
+          "Failed to fetch activity definitions",
+      );
+      setData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchActivityDefinitions = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await axios.get(
-          `${API_BASE_URL}/activity-definitions`,
-          {
-            params: { title },
-          },
-        );
-        const entries =
-          response.data.entry?.map(
-            (entry: any) => new ActivityDefinition(entry.resource),
-          ) || [];
-        setData(entries);
-      } catch (err: any) {
-        setError(
-          err.response?.data?.error ||
-            err.message ||
-            "Failed to fetch activity definitions",
-        );
-        setData([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchActivityDefinitions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [title]);
 
-  return { data, loading, error };
+  const fetchNextPage = () => {
+    if (paginationTokenNext) fetchActivityDefinitions(paginationTokenNext);
+  };
+
+  const fetchPrevPage = () => {
+    if (paginationTokenPrev) fetchActivityDefinitions(paginationTokenPrev);
+  };
+
+  return {
+    data,
+    loading,
+    error,
+    paginationTokenNext,
+    paginationTokenPrev,
+    fetchNextPage,
+    fetchPrevPage,
+  };
 };

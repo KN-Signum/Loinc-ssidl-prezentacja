@@ -1,29 +1,28 @@
 import { Stethoscope } from "lucide-react";
-
-const Header = ( { requesterName }: { requesterName: string } ) => {
+import BaseSwitcher from "../BaseSwitcher/BaseSwitcher";
+type HeaderProps = {
+  requesterName: string,
+  knowledgeBase: boolean;
+  setKnowledgeBase: (value: boolean) => void;
+};
+const Header = ( { requesterName, knowledgeBase, setKnowledgeBase }: HeaderProps ) => {
     return (
         <header className="sticky top-0 z-20 w-full border-b bg-white px-6 py-4 shadow-sm">
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="mx-auto flex max-w-7xl items-center">
+          <div className="flex items-center gap-3 min-w-0">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 text-white shadow-md">
               <Stethoscope className="h-6 w-6" />
             </div>
             <div>
               <h1 className="text-xl font-bold tracking-tight text-slate-900">
-                Katalog Usług Diagnostycznych
+                Aplikacja prezentacyjna SSIDL
               </h1>
-              <div className="flex items-center gap-2">
-                <span className="flex h-2 w-2 relative">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                </span>
-                <p className="text-xs font-medium text-slate-500">
-                  Baza Wiedzy: Połączono (FHIR R4)
-                </p>
-              </div>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex-1 flex justify-center min-w-0 px-2">
+            <BaseSwitcher knowledgeBase={knowledgeBase} setKnowledgeBase={setKnowledgeBase} />
+          </div>
+          <div className="flex items-center gap-4 min-w-0">
             <div className="hidden text-right text-sm leading-tight text-slate-500 md:block">
               <span className="block font-semibold text-slate-700">
                 {requesterName}

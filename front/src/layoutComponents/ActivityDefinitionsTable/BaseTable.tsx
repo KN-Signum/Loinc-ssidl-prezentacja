@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 import ActivityDefinitionsTable from "./components/ActivityDefinitionsTable";
 import Searchbar from "./components/Searchbar";
 import { ActivityDefinition } from "../../features/activityDefinition/ActivityDefinition";
+import BaseActivityDefinitionsTable from "./components/BaseActivityDefinitionsTable";
+import BaseSearchbar from "./components/BaseSearchbar";
 
 type MainTableProps = {
   basket: Set<string>;
@@ -11,9 +13,13 @@ type MainTableProps = {
   listLoading: boolean;
   searchTerm: string;
   setSearchTerm: (term: string) => void;
+  paginationTokenNext?: string | null;
+  paginationTokenPrev?: string | null;
+  fetchNextPage?: () => void;
+  fetchPrevPage?: () => void;
 };
 
-const MainTable = (props:MainTableProps) => {
+const BaseTable = (props:MainTableProps) => {
   const [selectedLab, setSelectedLab] = useState<string>("all");
   const [selectedSpecimen, setSelectedSpecimen] = useState<string>("all");
  
@@ -60,7 +66,7 @@ const MainTable = (props:MainTableProps) => {
   };
   return (
     <>
-      <Searchbar
+      <BaseSearchbar
         searchTerm={props.searchTerm}
         setSearchTerm={props.setSearchTerm}
         selectedLab={selectedLab}
@@ -68,7 +74,7 @@ const MainTable = (props:MainTableProps) => {
         selectedSpecimen={selectedSpecimen}
         setSelectedSpecimen={setSelectedSpecimen}
       />
-      <ActivityDefinitionsTable
+      <BaseActivityDefinitionsTable
         listData={props.listData}
         listLoading={props.listLoading}
         filteredData={filteredData}
@@ -76,8 +82,12 @@ const MainTable = (props:MainTableProps) => {
         toggleSelection={toggleSelection}
         setDetailsId={props.setDetailsId}
         getLoincOrICDCode={getLoincOrICDCode}
+        paginationTokenNext={props.paginationTokenNext}
+        paginationTokenPrev={props.paginationTokenPrev}
+        onNextPage={props.fetchNextPage}
+        onPrevPage={props.fetchPrevPage}
       />
     </>
   );
 };
-export default MainTable;
+export default BaseTable;
