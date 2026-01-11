@@ -47,10 +47,7 @@ const BaseActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
         return <Badge variant="outline">Aktywne</Badge>;
     }
   };
-  useEffect(() => {
-    console.log("Filtered Data:", props.filteredData);
-    console.log("Raw data:", props.listData);
-  }, [props.filteredData]);
+
   return (
     <Card className="border-slate-200 shadow-sm">
       <div className="rounded-md">
