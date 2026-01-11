@@ -1,11 +1,20 @@
+interface CachedData {
+  link: string;
+  expiresAt: number;
+}
+
 class PaginationCache {
+  private cache: Map<string, CachedData>;
+  private lastCleanup: number;
+  private cleanupIntervalMs: number;
+
   constructor() {
     this.cache = new Map();
     this.lastCleanup = Date.now();
     this.cleanupIntervalMs = 5 * 60 * 1000;
-    this.instance = null;
   }
-  get(token) {
+
+  get(token: string): CachedData | null {
     this.maybeCleanup();
 
     const data = this.cache.get(token);
@@ -19,7 +28,7 @@ class PaginationCache {
     return data;
   }
 
-  set(token, data, ttlMs = 15 * 60 * 1000) {
+  set(token: string, data: { link: string }, ttlMs: number = 15 * 60 * 1000): void {
     this.maybeCleanup();
 
     this.cache.set(token, {
@@ -28,7 +37,7 @@ class PaginationCache {
     });
   }
 
-  maybeCleanup() {
+  private maybeCleanup(): void {
     const now = Date.now();
     if (now - this.lastCleanup < this.cleanupIntervalMs) return;
     this.lastCleanup = now;
@@ -40,5 +49,6 @@ class PaginationCache {
     }
   }
 }
+
 const paginationCache = new PaginationCache();
 export default paginationCache;

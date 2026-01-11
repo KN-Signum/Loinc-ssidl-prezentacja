@@ -1,10 +1,25 @@
-import { fetchFhirResource } from "./services/fhir-service";
-import { getActivityDefinitionsByTitle, fetchActivityDefinition } from "./services/activity-definition";
-import { getConditionsDefinitionsFromActivityDefinition } from "./services/conditions";
-import { getObservationDefinitionsFromActivityDefinition } from "./services/observation";
-import { getSpecimenDefinitionsFromActivityDefinition } from "./services/specimen";
+import { fetchFhirResource } from "./services/fhir-service.js";
+import {
+  getActivityDefinitionsByTitle,
+  fetchActivityDefinition,
+} from "./services/activity-definition.js";
+import { getConditionsDefinitionsFromActivityDefinition } from "./services/conditions.js";
+import { getObservationDefinitionsFromActivityDefinition } from "./services/observation.js";
+import { getSpecimenDefinitionsFromActivityDefinition } from "./services/specimen.js";
 
-const writeToFile = async (filename, data) => {
+interface ResourceReference {
+  resourceType: string;
+  id: string;
+}
+
+interface ActivityDefinition {
+  id: string;
+  [key: string]: any;
+}
+
+type ResourceExtractor = (activityDefinition: ActivityDefinition) => ResourceReference[];
+
+const writeToFile = async (filename: string, data: any): Promise<void> => {
   const fs = await import("fs/promises");
   try {
     await fs.writeFile(filename, JSON.stringify(data, null, 2));
@@ -15,10 +30,10 @@ const writeToFile = async (filename, data) => {
 };
 
 const fetchAndSaveDefinitions = async (
-  activityDefinition,
-  extractor,
-  filenamePrefix,
-) => {
+  activityDefinition: ActivityDefinition,
+  extractor: ResourceExtractor,
+  filenamePrefix: string
+): Promise<void> => {
   const definitions = extractor(activityDefinition);
   if (!definitions.length) {
     return;
@@ -26,14 +41,14 @@ const fetchAndSaveDefinitions = async (
 
   const fetched = await Promise.all(
     definitions.map(({ resourceType, id }) =>
-      fetchFhirResource(resourceType, `/${id}`),
-    ),
+      fetchFhirResource(resourceType, `/${id}`)
+    )
   );
 
   await writeToFile(`${filenamePrefix}_${activityDefinition.id}.json`, fetched);
 };
 
-const getDataFromServer = async () => {
+const getDataFromServer = async (): Promise<void> => {
   const searchTitle = "morf";
   const activityDefinitionsBundle =
     await getActivityDefinitionsByTitle(searchTitle);
@@ -45,22 +60,22 @@ const getDataFromServer = async () => {
     return;
   }
 
-  activityDefinitionEntries.forEach(async (entry) => {
+  activityDefinitionEntries.forEach(async (entry: any) => {
     const { resource } = entry;
     await fetchAndSaveDefinitions(
       resource,
       getSpecimenDefinitionsFromActivityDefinition,
-      "specimenDefinitions",
+      "specimenDefinitions"
     );
     await fetchAndSaveDefinitions(
       resource,
       getObservationDefinitionsFromActivityDefinition,
-      "observationDefinitions",
+      "observationDefinitions"
     );
     await fetchAndSaveDefinitions(
       resource,
       getConditionsDefinitionsFromActivityDefinition,
-      "conditionDefinitions",
+      "conditionDefinitions"
     );
     await fetchActivityDefinition(resource.id);
   });
