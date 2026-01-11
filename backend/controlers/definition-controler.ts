@@ -103,7 +103,7 @@ export const citationsController = async (
     const qualifiedValues = observationDefinition.qualifiedValue || [];
 
     if (qualifiedValues.length === 0) {
-      res.status(200).json([]);
+      res.status(200).json({ message: "Brak danych" });
       return;
     }
 

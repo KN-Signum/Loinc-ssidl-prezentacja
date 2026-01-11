@@ -22,7 +22,7 @@ export interface DetailsSheetProps {
   specimenData: any;
   observationData: any;
   activityDefinitionData: any;
-  citationsData: CitationItem[] | null;
+  citationsData: CitationItem[] | { message: string } | null;
   isLoading: boolean;
 }
 
@@ -170,46 +170,50 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
                 </section>
               )}
 
-              {citationsData && citationsData.length > 0 && (
+              {citationsData && (
                 <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
                   <h4 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">
                     <BookOpen className="h-4 w-4" />
                     Wartości Referencyjne
                   </h4>
                   <div className="space-y-4">
-                    {citationsData.map((item, idx) => (
-                      <div key={idx} className="border-b border-slate-100 last:border-b-0 pb-4 last:pb-0">
-                        {item.message ? (
-                          <p className="text-sm text-slate-500 italic">{item.message}</p>
-                        ) : (
-                          <div className="space-y-2">
-                            {item.range && (
-                              <div className="flex items-center gap-2 mb-2">
-                                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                                  {item.range.low?.value !== undefined && item.range.high?.value !== undefined
-                                    ? `${item.range.low.value} - ${item.range.high.value} ${item.range.low.unit || ""}`
-                                    : item.range.low?.value !== undefined
-                                    ? `≥ ${item.range.low.value} ${item.range.low.unit || ""}`
-                                    : item.range.high?.value !== undefined
-                                    ? `≤ ${item.range.high.value} ${item.range.high.unit || ""}`
-                                    : "Brak zakresu"}
-                                </Badge>
-                              </div>
-                            )}
-                            {item.citation?.citedArtifact?.title && (
-                              <p className="text-sm font-medium text-slate-900">
-                                {item.citation.citedArtifact.title}
-                              </p>
-                            )}
-                            {item.citation?.citedArtifact?.abstract?.[0]?.text && (
-                              <p className="text-xs text-slate-600 leading-relaxed">
-                                {item.citation.citedArtifact.abstract[0].text}
-                              </p>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                    {Array.isArray(citationsData) ? (
+                      citationsData.map((item, idx) => (
+                        <div key={idx} className="border-b border-slate-100 last:border-b-0 pb-4 last:pb-0">
+                          {item.message ? (
+                            <p className="text-sm text-slate-500 italic">{item.message}</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {item.range && (
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                                    {item.range.low?.value !== undefined && item.range.high?.value !== undefined
+                                      ? `${item.range.low.value} - ${item.range.high.value} ${item.range.low.unit || ""}`
+                                      : item.range.low?.value !== undefined
+                                      ? `≥ ${item.range.low.value} ${item.range.low.unit || ""}`
+                                      : item.range.high?.value !== undefined
+                                      ? `≤ ${item.range.high.value} ${item.range.high.unit || ""}`
+                                      : "Brak zakresu"}
+                                  </Badge>
+                                </div>
+                              )}
+                              {item.citation?.citedArtifact?.title && (
+                                <p className="text-sm font-medium text-slate-900">
+                                  {item.citation.citedArtifact.title}
+                                </p>
+                              )}
+                              {item.citation?.citedArtifact?.abstract?.[0]?.text && (
+                                <p className="text-xs text-slate-600 leading-relaxed">
+                                  {item.citation.citedArtifact.abstract[0].text}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-slate-500 italic">{citationsData.message}</p>
+                    )}
                   </div>
                 </section>
               )}

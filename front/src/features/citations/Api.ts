@@ -5,7 +5,7 @@ import { CitationItem } from "./types";
 const API_BASE_URL = "http://localhost:5001/definitions";
 
 interface UseCitationsResult {
-  data: CitationItem[] | null;
+  data: CitationItem[] | { message: string } | null;
   loading: boolean;
   error: string | null;
 }
@@ -13,7 +13,7 @@ interface UseCitationsResult {
 export const useGetCitations = (
   observationId: string | null,
 ): UseCitationsResult => {
-  const [data, setData] = useState<CitationItem[] | null>(null);
+  const [data, setData] = useState<CitationItem[] | { message: string } | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
