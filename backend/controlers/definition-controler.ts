@@ -147,7 +147,7 @@ export const citationsController = async (
     );
 
     const filteredCitations = citationsWithRanges.filter(
-      (item) => item !== null
+      (item: any) => item !== null
     );
 
     res.status(200).json(filteredCitations);
