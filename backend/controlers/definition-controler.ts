@@ -7,7 +7,7 @@ import { getActivityDefinitionsByTitle } from "../services/activity-definition.j
 
 export const activityDefinitionByTitleController = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const { title = "", token } = req.query;
@@ -28,7 +28,7 @@ export const activityDefinitionByTitleController = async (
 
 export const activityDefinitionByIdController = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const { id } = req.params;
@@ -42,7 +42,7 @@ export const activityDefinitionByIdController = async (
 
 export const observationDefinitionByIdController = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const { id } = req.params;
@@ -56,7 +56,7 @@ export const observationDefinitionByIdController = async (
 
 export const specimenDefinitionByIdController = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const { id } = req.params;
@@ -70,7 +70,7 @@ export const specimenDefinitionByIdController = async (
 
 export const conditionDefinitionByIdController = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const { id } = req.params;
@@ -84,7 +84,7 @@ export const conditionDefinitionByIdController = async (
 
 export const citationsController = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const { observationID } = req.params;
@@ -98,9 +98,8 @@ export const citationsController = async (
 
     const observationDefinition = await fetchFhirResource(
       "ObservationDefinition",
-      `/${observationID}`
+      `/${observationID}`,
     );
-
     const qualifiedValues = observationDefinition.qualifiedValue || [];
 
     if (qualifiedValues.length === 0) {
@@ -111,43 +110,41 @@ export const citationsController = async (
     const citationsWithRanges = await Promise.all(
       qualifiedValues.map(async (qv: any) => {
         const citationReference = qv.extension?.find((ext: any) =>
-          ext.valueReference?.reference?.startsWith("Citation/")
+          ext.valueReference?.reference?.startsWith("Citation/"),
         )?.valueReference?.reference;
 
         if (!citationReference) {
-          return null;
+          return {
+            message: "Brak danych",
+          };
         }
 
         const citationId = citationReference.split("/")[1];
         const range = qv.range || null;
 
-        let citationResponse = null;
-        let statusCode: number | null = null;
-
         try {
-          citationResponse = await fetchFhirResource("Citation", `/${citationId}`);
-          statusCode = citationResponse.status;
-        } catch (error) {
-          statusCode = 500;
-        }
+          const citationResponse = await fetchFhirResource(
+            "Citation",
+            `/${citationId}`,
+          );
 
-        if (statusCode !== 200) {
+          return {
+            citation: citationResponse,
+            range,
+          };
+        } catch (error) {
+          console.error(`Error fetching citation ${citationId}:`, error);
           return {
             message:
               "Informacje źródłowe dla wartości referencyjnych badania laboratoryjnego są niedostępne.",
             range,
           };
         }
-
-        return {
-          citation: citationResponse,
-          range,
-        };
-      })
+      }),
     );
 
     const filteredCitations = citationsWithRanges.filter(
-      (item) => item !== null
+      (item) => item !== null,
     );
 
     res.status(200).json(filteredCitations);
@@ -159,7 +156,7 @@ export const citationsController = async (
 
 export const locationController = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const { type } = req.params;
