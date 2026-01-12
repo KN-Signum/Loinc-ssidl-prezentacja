@@ -12,7 +12,6 @@ import {
 } from "../../../components/ui/table";
 import { Button } from "../../../components/ui/button";
 import { ActivityDefinition } from "../../../features/activityDefinition/ActivityDefinition";
-import { useEffect } from "react";
 
 type ActivityDefinitionTableProps = {
   listData: ActivityDefinition[];
@@ -21,7 +20,7 @@ type ActivityDefinitionTableProps = {
   basket: Set<string>;
   toggleSelection: (id: string) => void;
   setDetailsId: (id: string) => void;
-  getLoincOrICDCode: (item: any) => string;
+  getLoincOrICDCode: (item: any) => {loinc:string,icd_9:string};
   paginationTokenNext?: string | null;
   paginationTokenPrev?: string | null;
   onNextPage?: () => void;
@@ -56,9 +55,9 @@ const BaseActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
             <TableRow>
               <TableHead className="w-[50px] text-center"></TableHead>
               <TableHead className="w-[350px]">Nazwa Badania</TableHead>
-              <TableHead className="w-[180px]">Kod (LOINC/Local)</TableHead>
-              <TableHead className="w-[120px]">Status</TableHead>
-              <TableHead className="text-right">Baza Wiedzy</TableHead>
+              <TableHead className="w-[180px]">Kod (LOINC)</TableHead>
+              <TableHead className="w-[120px]">Kod ICD-9</TableHead>
+              <TableHead className="text-right"> </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -83,7 +82,8 @@ const BaseActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
             ) : (
               props.filteredData.map((item: any) => {
                 const isSelected = props.basket.has(item.id);
-                const codeDisplay = props.getLoincOrICDCode(item);
+                const loincCode = props.getLoincOrICDCode(item).loinc;
+                const icd9Code = props.getLoincOrICDCode(item).icd_9;
                 return (
                   <TableRow
                     key={item.id}
@@ -117,11 +117,11 @@ const BaseActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
                         className="px-2 py-1 font-mono text-xs bg-slate-50 text-slate-600 border-slate-200"
                       >
                         <Activity className="h-3 w-3 mr-1 inline-block" />
-                        {codeDisplay}
+                        {loincCode}
                       </Badge>
                     </TableCell>
                     <TableCell className="align-middle">
-                      {getStatusBadge(item.status || "active")}
+                      {icd9Code}
                     </TableCell>
 
                     <TableCell className="text-right align-middle">

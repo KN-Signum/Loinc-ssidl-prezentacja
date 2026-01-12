@@ -13,7 +13,7 @@ interface UseTableFilteringResult {
   selectedSpecimen: string;
   setSelectedSpecimen: (specimen: string) => void;
   filteredData: ActivityDefinition[];
-  getLoincOrICDCode: (item: ActivityDefinition) => string;
+  getLoincOrICDCode: (item: ActivityDefinition) => {loinc:string,icd_9:string};
 }
 
 const LOINC_SYSTEM = "http://loinc.org";
@@ -28,14 +28,14 @@ export const useTableFiltering = ({
   const [selectedSpecimen, setSelectedSpecimen] = useState<string>("all");
 
   // Memoized code extraction function
-  const getLoincOrICDCode = useCallback((item: ActivityDefinition): string => {
+  const getLoincOrICDCode = useCallback((item: ActivityDefinition): {loinc:string,icd_9:string} => {
     const codingArray: Coding[] = item.code?.coding || [];
-    const code = codingArray.find(
-      (c: Coding) =>
-        (c.system === LOINC_SYSTEM && c.code) ||
-        (c.system === ICD9_SYSTEM && c.code)
-    )?.code;
-    return code || DEFAULT_CODE;
+    const loinc = codingArray[0]?.code || DEFAULT_CODE
+    const icd_9 = codingArray[1]?.code || DEFAULT_CODE
+    return {
+      loinc,
+      icd_9
+    };
   }, []);
 
   // Memoized filtered data
@@ -43,8 +43,8 @@ export const useTableFiltering = ({
     if (!listData) return [];
 
     return listData.filter((item: ActivityDefinition) => {
-      const title = item.title || item.name || "";
-      const code = getLoincOrICDCode(item);
+      const title = item.title ||  "";
+      const code = getLoincOrICDCode(item).loinc;
 
       const matchesSearch =
         title.toLowerCase().includes(searchTerm.toLowerCase()) ||
