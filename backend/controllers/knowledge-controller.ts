@@ -121,6 +121,7 @@ export const citationsController = async (
 
         const citationId = citationReference.split("/")[1];
         const range = qv.range || null;
+        const age = qv.age || null;
 
         try {
           const citationResponse = await fetchFhirResource(
@@ -130,14 +131,18 @@ export const citationsController = async (
 
           return {
             citation: citationResponse,
+            citationId,
             range,
+            age,
           };
         } catch (error) {
           console.error(`Error fetching citation ${citationId}:`, error);
           return {
             message:
               "Informacje źródłowe dla wartości referencyjnych badania laboratoryjnego są niedostępne.",
+            citationId,
             range,
+            age,
           };
         }
       }),
