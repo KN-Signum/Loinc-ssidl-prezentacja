@@ -7,6 +7,7 @@ import { DetailsSheet } from "./layoutComponents/App/DetailsSheet";
 import { useGetSpecimenDefinition } from "./features/specimenDefinition/Api";
 import { useGetObservationDefinition } from "./features/observationDefinition/Api";
 import { useGetActivityDefinitionsByTitle } from "./features/activityDefinition/Api";
+import { useGetCitations } from "./features/citations/Api";
 import { useBasketStore } from "./store/basketStore";
 
 export default function App() {
@@ -21,7 +22,8 @@ export default function App() {
 
   const specimenQuery = useGetSpecimenDefinition(detailsId);
   const observationQuery = useGetObservationDefinition(detailsId);
-  const isDetailsLoading = specimenQuery.loading || observationQuery.loading;
+  const citationsQuery = useGetCitations(detailsId);
+  const isDetailsLoading = specimenQuery.loading || observationQuery.loading || citationsQuery.loading;
 
   const {
     data: listData,
@@ -36,6 +38,10 @@ export default function App() {
 
   const basketItems = getBasketItems(listData || []);
   const basketGroups = getBasketGroups(listData || []);
+
+  const activityDefinitionData = detailsId
+    ? listData?.find((item) => item.id === detailsId)
+    : null;
 
   const handleOrderSubmit = () => {
     setIsOrderModalOpen(false);
@@ -74,6 +80,8 @@ export default function App() {
         onClose={() => setDetailsId(null)}
         specimenData={specimenQuery.data}
         observationData={observationQuery.data}
+        activityDefinitionData={activityDefinitionData}
+        citationsData={citationsQuery.data}
         isLoading={isDetailsLoading}
       />
 

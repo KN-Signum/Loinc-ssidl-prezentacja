@@ -1,12 +1,18 @@
 import { SpecimenDefinitionResource } from "./types";
 
+export interface HandlingInstruction {
+  displayName: string;
+  code: string;
+  instruction: string;
+}
+
 export class SpecimenDefinition {
   id: string;
   collectionCode: string;
   collectionSystem: string;
   patientPreparation: string[];
-  transportInstructions: string[];
-  stabilityInstructions: string[];
+  handlingInstructions: HandlingInstruction[];
+
   constructor(data: SpecimenDefinitionResource) {
     this.id = data.id;
 
@@ -17,8 +23,7 @@ export class SpecimenDefinition {
     this.patientPreparation =
       data.patientPreparation?.map((prep) => prep.text) || [];
 
-    const uniqueTransport = new Set<string>();
-    const uniqueStability = new Set<string>();
+    const handlingList: HandlingInstruction[] = [];
 
     if (data.typeTested) {
       data.typeTested.forEach((testType) => {
@@ -27,20 +32,20 @@ export class SpecimenDefinition {
             if (!handle.instruction) return;
 
             handle.extension?.forEach((ext) => {
-              const code = ext.valueCoding?.code;
+              const displayName = ext.valueCoding?.display || "N/A";
+              const code = ext.valueCoding?.code || "N/A";
 
-              if (code === "WARTRANS") {
-                uniqueTransport.add(handle.instruction!);
-              } else if (code === "STABPIERW") {
-                uniqueStability.add(handle.instruction!);
-              }
+              handlingList.push({
+                displayName,
+                code,
+                instruction: handle.instruction!,
+              });
             });
           });
         }
       });
     }
 
-    this.transportInstructions = Array.from(uniqueTransport);
-    this.stabilityInstructions = Array.from(uniqueStability);
+    this.handlingInstructions = handlingList;
   }
 }
