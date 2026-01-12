@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { CitationItem } from "./types";
 
-const API_BASE_URL = "http://localhost:5001/definitions";
+const API_BASE_URL = "http://localhost:5001/knowledge";
 
 interface UseCitationsResult {
   data: CitationItem[] | { message: string } | null;
@@ -13,7 +13,9 @@ interface UseCitationsResult {
 export const useGetCitations = (
   observationId: string | null,
 ): UseCitationsResult => {
-  const [data, setData] = useState<CitationItem[] | { message: string } | null>(null);
+  const [data, setData] = useState<CitationItem[] | { message: string } | null>(
+    null,
+  );
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
