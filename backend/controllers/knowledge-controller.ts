@@ -3,7 +3,7 @@ import {
   fetchFhirResource,
   fetchPaginatedFhirResource,
 } from "../services/fhir-service.js";
-import { getActivityDefinitionsByTitle } from "../services/activity-definition.js";
+import { getActivityDefinitionsByTitle } from "../services/activity-definition.js"
 
 export const activityDefinitionByTitleController = async (
   req: Request,
@@ -18,7 +18,7 @@ export const activityDefinitionByTitleController = async (
       res.status(200).json(result);
       return;
     }
-    const result = await getActivityDefinitionsByTitle(title as string);
+    const result = await getActivityDefinitionsByTitle(title as string,true);
     res.status(200).json(result);
   } catch (error: any) {
     console.error("Error fetching activity definitions:", error);
