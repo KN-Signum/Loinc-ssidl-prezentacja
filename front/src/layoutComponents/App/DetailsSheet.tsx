@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   FlaskConical,
   TestTube2,
@@ -26,6 +26,8 @@ export interface DetailsSheetProps {
   isLoading: boolean;
 }
 
+const DESCRIPTION_CHAR_LIMIT = 300;
+
 export const DetailsSheet: React.FC<DetailsSheetProps> = ({
   detailsId,
   onClose,
@@ -35,6 +37,64 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
   citationsData,
   isLoading,
 }) => {
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+
+  useEffect(() => {
+    setIsDescriptionExpanded(false);
+  }, [detailsId]);
+
+  const description = activityDefinitionData?.description || "";
+  const isDescriptionLong = description.length > DESCRIPTION_CHAR_LIMIT;
+  const displayedDescription =
+    isDescriptionLong && !isDescriptionExpanded
+      ? description.slice(0, DESCRIPTION_CHAR_LIMIT) + "..."
+      : description;
+
+  const formatRangeValue = (value: number | undefined): number | undefined => {
+    return value !== undefined ? Math.round(value * 100) / 100 : undefined;
+  };
+  const renderRangeOrAge = (
+    data: {
+      low?: { value?: number; unit?: string };
+      high?: { value?: number; unit?: string };
+    } | null,
+    label: string,
+    citationId?: string,
+  ) => {
+    if (!data) return null;
+
+    const lowValue = formatRangeValue(data.low?.value);
+    const highValue = formatRangeValue(data.high?.value);
+    const unit = data.low?.unit || data.high?.unit || "";
+
+    let displayText = "";
+    if (lowValue !== undefined && highValue !== undefined) {
+      displayText = `${lowValue} - ${highValue} ${unit}`;
+    } else if (lowValue !== undefined) {
+      displayText = `≥ ${lowValue} ${unit}`;
+    } else if (highValue !== undefined) {
+      displayText = `≤ ${highValue} ${unit}`;
+    } else {
+      displayText = "Brak zakresu";
+    }
+
+    return (
+      <div className="flex items-center gap-2 mb-2">
+        <Badge
+          variant="outline"
+          className="bg-blue-50 text-blue-700 border-blue-200"
+        >
+          {label}: {displayText}
+        </Badge>
+        {citationId && (
+          <span className="text-xs text-slate-500 font-mono">
+            Citation/{citationId}
+          </span>
+        )}
+      </div>
+    );
+  };
+
   return (
     <Sheet open={!!detailsId} onOpenChange={(open) => !open && onClose()}>
       <SheetContent className="w-full mx-4 sm:max-w-xl overflow-y-auto">
@@ -66,8 +126,18 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
                     Opis
                   </h4>
                   <p className="text-sm text-slate-700 leading-relaxed">
-                    {activityDefinitionData.description}
+                    {displayedDescription}
                   </p>
+                  {isDescriptionLong && (
+                    <button
+                      onClick={() =>
+                        setIsDescriptionExpanded(!isDescriptionExpanded)
+                      }
+                      className="mt-2 text-sm text-blue-600 hover:text-blue-800 font-medium underline"
+                    >
+                      {isDescriptionExpanded ? "pokaż mniej" : "pokaż więcej"}
+                    </button>
+                  )}
                 </section>
               )}
 
@@ -139,27 +209,23 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
                               ) => (
                                 <div
                                   key={idx}
-                                  className="flex items-start gap-3 p-3 rounded-lg bg-white border border-slate-200 mb-2"
+                                  className="p-4 rounded-lg border border-slate-300 mb-2"
                                 >
-                                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 shadow-sm border border-blue-100">
-                                    <Truck className="h-5 w-5" />
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <Truck className="h-4 w-4 text-blue-600 shrink-0" />
+                                    <span className="text-sm font-semibold text-slate-900">
+                                      {item.displayName}
+                                    </span>
+                                    <Badge
+                                      variant="outline"
+                                      className="text-xs font-mono"
+                                    >
+                                      {item.code}
+                                    </Badge>
                                   </div>
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <span className="text-sm font-semibold text-slate-900">
-                                        {item.displayName}
-                                      </span>
-                                      <Badge
-                                        variant="outline"
-                                        className="text-xs font-mono"
-                                      >
-                                        {item.code}
-                                      </Badge>
-                                    </div>
-                                    <p className="text-sm text-slate-700">
-                                      {item.instruction}
-                                    </p>
-                                  </div>
+                                  <p className="text-sm text-slate-700 leading-relaxed pl-6">
+                                    {item.instruction}
+                                  </p>
                                 </div>
                               ),
                             )}
@@ -179,30 +245,33 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
                   <div className="space-y-4">
                     {Array.isArray(citationsData) ? (
                       citationsData.map((item, idx) => (
-                        <div key={idx} className="border-b border-slate-100 last:border-b-0 pb-4 last:pb-0">
+                        <div
+                          key={idx}
+                          className="border-b border-slate-100 last:border-b-0 pb-4 last:pb-0"
+                        >
                           {item.message ? (
-                            <p className="text-sm text-slate-500 italic">{item.message}</p>
+                            <p className="text-sm text-slate-500 italic">
+                              {item.message}
+                            </p>
                           ) : (
                             <div className="space-y-2">
-                              {item.range && (
-                                <div className="flex items-center gap-2 mb-2">
-                                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                                    {item.range.low?.value !== undefined && item.range.high?.value !== undefined
-                                      ? `${item.range.low.value} - ${item.range.high.value} ${item.range.low.unit || ""}`
-                                      : item.range.low?.value !== undefined
-                                      ? `≥ ${item.range.low.value} ${item.range.low.unit || ""}`
-                                      : item.range.high?.value !== undefined
-                                      ? `≤ ${item.range.high.value} ${item.range.high.unit || ""}`
-                                      : "Brak zakresu"}
-                                  </Badge>
-                                </div>
+                              {renderRangeOrAge(
+                                item.range,
+                                "Zakres",
+                                item.citationId,
+                              )}
+                              {renderRangeOrAge(
+                                item.age,
+                                "Wiek",
+                                item.citationId,
                               )}
                               {item.citation?.citedArtifact?.title && (
                                 <p className="text-sm font-medium text-slate-900">
                                   {item.citation.citedArtifact.title}
                                 </p>
                               )}
-                              {item.citation?.citedArtifact?.abstract?.[0]?.text && (
+                              {item.citation?.citedArtifact?.abstract?.[0]
+                                ?.text && (
                                 <p className="text-xs text-slate-600 leading-relaxed">
                                   {item.citation.citedArtifact.abstract[0].text}
                                 </p>
@@ -212,7 +281,9 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
                         </div>
                       ))
                     ) : (
-                      <p className="text-sm text-slate-500 italic">{citationsData.message}</p>
+                      <p className="text-sm text-slate-500 italic">
+                        {citationsData.message}
+                      </p>
                     )}
                   </div>
                 </section>

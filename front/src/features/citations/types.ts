@@ -11,6 +11,8 @@ export interface CitationRange {
 
 export interface CitationItem {
   citation?: any;
+  citationId?: string;
+  age?: CitationRange | null;
   range?: CitationRange | null;
   message?: string;
 }
