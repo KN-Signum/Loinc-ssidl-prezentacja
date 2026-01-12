@@ -3,11 +3,11 @@ import {
   fetchFhirResource,
   fetchPaginatedFhirResource,
 } from "../services/fhir-service.js";
-import { getActivityDefinitionsByTitle } from "../services/activity-definition.js";
+import { getActivityDefinitionsByTitle } from "../services/activity-definition.js"
 
 export const activityDefinitionByTitleController = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<void> => {
   try {
     const { title = "", token } = req.query;
@@ -18,7 +18,7 @@ export const activityDefinitionByTitleController = async (
       res.status(200).json(result);
       return;
     }
-    const result = await getActivityDefinitionsByTitle(title as string);
+    const result = await getActivityDefinitionsByTitle(title as string,true);
     res.status(200).json(result);
   } catch (error: any) {
     console.error("Error fetching activity definitions:", error);
@@ -28,7 +28,7 @@ export const activityDefinitionByTitleController = async (
 
 export const activityDefinitionByIdController = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<void> => {
   try {
     const { id } = req.params;
@@ -42,7 +42,7 @@ export const activityDefinitionByIdController = async (
 
 export const observationDefinitionByIdController = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<void> => {
   try {
     const { id } = req.params;
@@ -56,7 +56,7 @@ export const observationDefinitionByIdController = async (
 
 export const specimenDefinitionByIdController = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<void> => {
   try {
     const { id } = req.params;
@@ -70,7 +70,7 @@ export const specimenDefinitionByIdController = async (
 
 export const conditionDefinitionByIdController = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<void> => {
   try {
     const { id } = req.params;
@@ -84,7 +84,7 @@ export const conditionDefinitionByIdController = async (
 
 export const citationsController = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<void> => {
   try {
     const { observationID } = req.params;
@@ -98,53 +98,56 @@ export const citationsController = async (
 
     const observationDefinition = await fetchFhirResource(
       "ObservationDefinition",
-      `/${observationID}`,
+      `/${observationID}`
     );
+
     const qualifiedValues = observationDefinition.qualifiedValue || [];
 
     if (qualifiedValues.length === 0) {
-      res.status(200).json({ message: "Brak danych" });
+      res.status(200).json([]);
       return;
     }
 
     const citationsWithRanges = await Promise.all(
       qualifiedValues.map(async (qv: any) => {
         const citationReference = qv.extension?.find((ext: any) =>
-          ext.valueReference?.reference?.startsWith("Citation/"),
+          ext.valueReference?.reference?.startsWith("Citation/")
         )?.valueReference?.reference;
 
         if (!citationReference) {
-          return {
-            message: "Brak danych",
-          };
+          return null;
         }
 
         const citationId = citationReference.split("/")[1];
         const range = qv.range || null;
 
-        try {
-          const citationResponse = await fetchFhirResource(
-            "Citation",
-            `/${citationId}`,
-          );
+        let citationResponse = null;
+        let statusCode: number | null = null;
 
-          return {
-            citation: citationResponse,
-            range,
-          };
+        try {
+          citationResponse = await fetchFhirResource("Citation", `/${citationId}`);
+          statusCode = citationResponse.status;
         } catch (error) {
-          console.error(`Error fetching citation ${citationId}:`, error);
+          statusCode = 500;
+        }
+
+        if (statusCode !== 200) {
           return {
             message:
               "Informacje źródłowe dla wartości referencyjnych badania laboratoryjnego są niedostępne.",
             range,
           };
         }
-      }),
+
+        return {
+          citation: citationResponse,
+          range,
+        };
+      })
     );
 
     const filteredCitations = citationsWithRanges.filter(
-      (item) => item !== null,
+      (item: any) => item !== null
     );
 
     res.status(200).json(filteredCitations);
@@ -156,7 +159,7 @@ export const citationsController = async (
 
 export const locationController = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<void> => {
   try {
     const { type } = req.params;

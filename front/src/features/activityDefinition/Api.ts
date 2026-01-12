@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { ActivityDefinition } from "./ActivityDefinition";
 
-const API_BASE_URL = "http://localhost:5001/definitions";
+const API_BASE_URL = "http://localhost:5001/knowledge";
 
 interface UseActivityDefinitionResult {
   data: ActivityDefinition | null;
