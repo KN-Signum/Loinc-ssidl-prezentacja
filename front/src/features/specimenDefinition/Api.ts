@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { SpecimenDefinition } from "./SpecimenDefinition";
 
-const API_BASE_URL = "http://localhost:5001/definitions";
+const API_BASE_URL = "http://localhost:5001/knowledge";
 
 interface UseSpecimenDefinitionResult {
   data: SpecimenDefinition | null;

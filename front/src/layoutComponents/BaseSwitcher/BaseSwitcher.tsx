@@ -20,7 +20,7 @@ const BaseSwitcher = ({ knowledgeBase, setKnowledgeBase }: BaseSwitcherProps) =>
         }`}
         onClick={() => setKnowledgeBase(false)}
       >
-        Katalog usług medycznych
+        Lista usług katalogowych
       </button>
       <button
         role="tab"
