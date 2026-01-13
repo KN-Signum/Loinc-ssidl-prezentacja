@@ -21,8 +21,7 @@ type SearchbarProps = {
 };
 
 const BaseSearchbar = (props: SearchbarProps) => {
-  const {data: laboratories} = useGetLocationDefinitionLB();
-  const {data: collectionPoints} = useGetLocationDefinitionPP();
+
   return (
     <Card className="border-slate-200 shadow-sm mb-6">
       <CardContent className="pt-6">
