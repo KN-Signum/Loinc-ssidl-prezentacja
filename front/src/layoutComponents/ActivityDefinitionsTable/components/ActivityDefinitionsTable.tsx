@@ -20,7 +20,7 @@ type ActivityDefinitionTableProps = {
   basket: Set<string>;
   toggleSelection: (id: string) => void;
   setDetailsId: (id: string) => void;
-  getLoincOrICDCode: (item: any) => string;
+  getLoincOrICDCode: (item: any) => {loinc:string,icd_9:string};
 };
 
 const ActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
@@ -78,7 +78,8 @@ const ActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
             ) : (
               props.filteredData.map((item: any) => {
                 const isSelected = props.basket.has(item.id);
-                const codeDisplay = props.getLoincOrICDCode(item);
+                const loincCode = props.getLoincOrICDCode(item).loinc;
+                const icd9Code = props.getLoincOrICDCode(item).icd_9;
                 return (
                   <TableRow
                     key={item.id}
@@ -112,7 +113,7 @@ const ActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
                         className="px-2 py-1 font-mono text-xs bg-slate-50 text-slate-600 border-slate-200"
                       >
                         <Activity className="h-3 w-3 mr-1 inline-block" />
-                        {codeDisplay}
+                        {loincCode}
                       </Badge>
                     </TableCell>
 
