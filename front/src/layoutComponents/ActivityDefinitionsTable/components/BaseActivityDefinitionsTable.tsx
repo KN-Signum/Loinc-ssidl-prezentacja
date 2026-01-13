@@ -94,11 +94,6 @@ const BaseActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
                     }`}
                   >
                     <TableCell className="text-center">
-                      <Checkbox
-                        checked={isSelected}
-                        onCheckedChange={() => props.toggleSelection(item.id)}
-                        aria-label={`Select ${item.title}`}
-                      />
                     </TableCell>
 
                     <TableCell className="align-middle">
