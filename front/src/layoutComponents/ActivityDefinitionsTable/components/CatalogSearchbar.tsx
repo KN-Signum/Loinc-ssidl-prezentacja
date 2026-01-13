@@ -10,25 +10,17 @@ import {
 } from "../../../components/ui/select";
 import { Button } from "../../../components/ui/button";
 import { useGetLocationDefinitionLB, useGetLocationDefinitionPP } from "../../../features/locationDefinition/Api.ts";
+import { useTableFiltering } from "../../../hooks/useTableFiltering.ts";
+import { useAppStore } from "../../../store/appStore.ts";
 
-type SearchbarProps = {
-  searchTerm: string;
-  setSearchTerm: (term: string) => void;
-  selectedLab: string;
-  setSelectedLab: (lab: string) => void;
-  selectedSpecimen: string;
-  setSelectedSpecimen: (specimen: string) => void;
-};
-const LABORATORIES = [
-  "Diagnostyka Łódź",
-  "Szpital Wojewódzki",
-  "Lab. Centralne",
-];
-const SPECIMENS = ["Krew żylna", "Mocz", "Surowica", "Osocze"];
-
-const Searchbar = (props: SearchbarProps) => {
+const Searchbar = () => {
   const {data: laboratories} = useGetLocationDefinitionLB();
   const {data: collectionPoints} = useGetLocationDefinitionPP();
+   const { searchTerm, setSearchTerm } = useAppStore();
+    const { selectedLab,setSelectedLab,selectedSpecimen, setSelectedSpecimen } = useTableFiltering({
+      listData: [],
+      searchTerm: "",
+    });
   return (
     <Card className="border-slate-200 shadow-sm mb-6">
       <CardContent className="pt-6">
@@ -43,8 +35,8 @@ const Searchbar = (props: SearchbarProps) => {
               <Input
                 placeholder="Nazwa badania, kod LOINC..."
                 className="pl-9"
-                value={props.searchTerm}
-                onChange={(e) => props.setSearchTerm(e.target.value)}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
           </div>
@@ -52,11 +44,11 @@ const Searchbar = (props: SearchbarProps) => {
           {/* Filters */}
           <div className="w-full space-y-2 md:w-[280px]">
             <label className="text-sm font-medium leading-none">
-              Laboratorium
+              Laboratorium/Punkt pobrań
             </label>
             <Select
-              value={props.selectedLab}
-              onValueChange={props.setSelectedLab}
+              value={selectedLab}
+              onValueChange={setSelectedLab}
             >
               <SelectTrigger>
                 <div className="flex items-center gap-2 text-slate-600">
@@ -71,26 +63,9 @@ const Searchbar = (props: SearchbarProps) => {
                     {lab.name}
                   </SelectItem>
                 ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="w-full space-y-2 md:w-[240px]">
-            <label className="text-sm font-medium leading-none">Punkty Pobrań</label>
-            <Select
-              value={props.selectedSpecimen}
-              onValueChange={props.setSelectedSpecimen}
-            >
-              <SelectTrigger>
-                <div className="flex items-center gap-2 text-slate-600">
-                  <FlaskConical className="h-4 w-4" />
-                  <SelectValue placeholder="Wszystkie" />
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Wszystkie punkty pobrań</SelectItem>
-                {collectionPoints?.map((point) => (
-                  <SelectItem key={point.id} value={point.id}>
+                {// Dodałem collectionPoint do id bo z bazy danych narazie mogą się powtarzać
+                collectionPoints?.map((point) => (
+                  <SelectItem key={point.id + "collectionPoint"} value={point.id+ "collectionPoint"}> 
                     {point.name}
                   </SelectItem>
                 ))}
@@ -102,9 +77,9 @@ const Searchbar = (props: SearchbarProps) => {
             variant="outline"
             className="shrink-0"
             onClick={() => {
-              props.setSearchTerm("");
-              props.setSelectedLab("all");
-              props.setSelectedSpecimen("all");
+              setSearchTerm("");
+              setSelectedLab("all");
+              setSelectedSpecimen("all");
             }}
           >
             <Filter className="mr-2 h-4 w-4" />
