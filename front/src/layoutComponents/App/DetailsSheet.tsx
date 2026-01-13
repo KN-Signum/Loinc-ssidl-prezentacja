@@ -59,7 +59,6 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
       high?: { value?: number; unit?: string };
     } | null,
     label: string,
-    citationId?: string,
   ) => {
     if (!data) return null;
 
@@ -86,11 +85,6 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
         >
           {label}: {displayText}
         </Badge>
-        {citationId && (
-          <span className="text-xs text-slate-500 font-mono">
-            Citation/{citationId}
-          </span>
-        )}
       </div>
     );
   };
@@ -247,34 +241,39 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
                       citationsData.map((item, idx) => (
                         <div
                           key={idx}
-                          className="border-b border-slate-100 last:border-b-0 pb-4 last:pb-0"
+                          className="border border-slate-200 rounded-lg p-4 last:mb-0 bg-slate-50/30"
                         >
                           {item.message ? (
                             <p className="text-sm text-slate-500 italic">
                               {item.message}
                             </p>
                           ) : (
-                            <div className="space-y-2">
-                              {renderRangeOrAge(
-                                item.range,
-                                "Zakres",
-                                item.citationId,
+                            <div className="space-y-3">
+                              <div className="flex flex-wrap gap-2">
+                                {renderRangeOrAge(item.range, "Zakres")}
+                                {renderRangeOrAge(item.age, "Wiek")}
+                              </div>
+                              {item.citation?.description && (
+                                <div className="pt-2 border-t border-slate-200">
+                                  <p className="text-sm text-slate-700 leading-relaxed">
+                                    {item.citation.description}
+                                  </p>
+                                </div>
                               )}
-                              {renderRangeOrAge(
-                                item.age,
-                                "Wiek",
-                                item.citationId,
-                              )}
-                              {item.citation?.citedArtifact?.title && (
-                                <p className="text-sm font-medium text-slate-900">
-                                  {item.citation.citedArtifact.title}
-                                </p>
-                              )}
-                              {item.citation?.citedArtifact?.abstract?.[0]
-                                ?.text && (
-                                <p className="text-xs text-slate-600 leading-relaxed">
-                                  {item.citation.citedArtifact.abstract[0].text}
-                                </p>
+                              {item.citation?.url && (
+                                <div className="pt-2">
+                                  <a
+                                    href={item.citation?.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 hover:underline break-all"
+                                  >
+                                    <BookOpen className="h-4 w-4 shrink-0" />
+                                    <span className="break-all">
+                                      {item.citation?.url}
+                                    </span>
+                                  </a>
+                                </div>
                               )}
                             </div>
                           )}
