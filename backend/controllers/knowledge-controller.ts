@@ -5,6 +5,13 @@ import {
 } from "../services/fhir-service.js";
 import { getActivityDefinitionsByTitle } from "../services/activity-definition.js";
 
+const ageMap = new Map([
+  ["a", "lat"],
+  ["mo", "miesięcy"],
+  ["d", "dni"],
+  ["wk", "tygodni"],
+]);
+
 export const activityDefinitionByTitleController = async (
   req: Request,
   res: Response,
@@ -107,6 +114,24 @@ export const citationsController = async (
       return;
     }
 
+    const mapAgeUnit = (age: any) => {
+      if (!age) return null;
+      const mappedAge = { ...age };
+      if (mappedAge.low?.unit) {
+        mappedAge.low = {
+          ...mappedAge.low,
+          unit: ageMap.get(mappedAge.low.unit) || mappedAge.low.unit,
+        };
+      }
+      if (mappedAge.high?.unit) {
+        mappedAge.high = {
+          ...mappedAge.high,
+          unit: ageMap.get(mappedAge.high.unit) || mappedAge.high.unit,
+        };
+      }
+      return mappedAge;
+    };
+
     const citationsWithRanges = await Promise.all(
       qualifiedValues.map(async (qv: any) => {
         const citationReference = qv.extension?.find((ext: any) =>
@@ -121,7 +146,7 @@ export const citationsController = async (
 
         const citationId = citationReference.split("/")[1];
         const range = qv.range || null;
-        const age = qv.age || null;
+        const age = mapAgeUnit(qv.age);
 
         try {
           const citationResponse = await fetchFhirResource(
