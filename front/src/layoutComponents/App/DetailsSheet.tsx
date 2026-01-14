@@ -76,7 +76,7 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
     }
 
     return (
-      <div className="flex items-center gap-2 mb-2">
+      <div className="flex items-center gap-2">
         <Badge
           variant="outline"
           className="bg-blue-50 text-blue-700 border-blue-200"
@@ -234,19 +234,19 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
                     <BookOpen className="h-4 w-4" />
                     Wartości Referencyjne
                   </h4>
-                  <div className="space-y-4">
+                  <div className="flex flex-col gap-4">
                     {Array.isArray(citationsData) ? (
                       citationsData.map((item, idx) => (
                         <div
                           key={idx}
-                          className="border border-slate-200 rounded-lg p-4 last:mb-0 bg-slate-50/30"
+                          className="border border-slate-200 rounded-lg p-4 bg-slate-50/30"
                         >
                           {item.message ? (
                             <p className="text-sm text-slate-500 italic">
                               {item.message}
                             </p>
                           ) : (
-                            <div className="space-y-3">
+                            <div className="flex flex-col gap-3">
                               <div className="flex flex-wrap gap-2">
                                 {renderRangeOrAge(item.range, "Zakres")}
                                 {renderRangeOrAge(item.age, "Wiek")}
