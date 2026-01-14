@@ -111,7 +111,7 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
               </Badge>
             </SheetHeader>
 
-            <div className="space-y-8">
+            <div className="space-y-8  px-4">
               {activityDefinitionData?.description && (
                 <section className="rounded-lg border border-slate-200 bg-slate-50/50 p-4">
                   <h4 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-2">

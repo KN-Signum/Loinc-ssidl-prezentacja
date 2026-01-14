@@ -1,9 +1,10 @@
-import { Filter, Search } from "lucide-react";
+import { X, Search } from "lucide-react";
 import { Card, CardContent } from "../../../components/ui/card";
 import { Input } from "../../../components/ui/input";
 import { Button } from "../../../components/ui/button";
 import { useAppStore } from "../../../store/appStore";
 import { useTableFiltering } from "../../../hooks/useTableFiltering";
+import { IconButton } from "../../../components/ui/icon-button";
 
 
 const BaseSearchbar = () => {
@@ -32,18 +33,19 @@ const BaseSearchbar = () => {
             </div>
           </div>
 
-          <Button
-            variant="outline"
-            className="shrink-0"
+          <IconButton
+            variant="ghost"
+            className="shrink-0 border-slate-200"
+            aria-label="Wyczyść wyszukiwarkę"
+            hover="accent"
             onClick={() => {
               setSearchTerm("");
               setSelectedLab("all");
               setSelectedSpecimen("all");
             }}
           >
-            <Filter className="mr-2 h-4 w-4" />
-            Reset
-          </Button>
+            <X className="absolute text-slate-800" />
+          </IconButton>
         </div>
       </CardContent>
     </Card>

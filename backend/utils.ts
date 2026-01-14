@@ -51,7 +51,7 @@ const fetchAndSaveDefinitions = async (
 const getDataFromServer = async (): Promise<void> => {
   const searchTitle = "morf";
   const activityDefinitionsBundle =
-    await getActivityDefinitionsByTitle(searchTitle);
+    await getActivityDefinitionsByTitle(searchTitle, true);
   await writeToFile("activityDefinitionsRAW.json", activityDefinitionsBundle);
 
   const activityDefinitionEntries = activityDefinitionsBundle.entry || [];

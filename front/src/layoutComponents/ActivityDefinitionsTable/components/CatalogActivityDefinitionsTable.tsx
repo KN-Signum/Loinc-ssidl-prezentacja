@@ -22,14 +22,14 @@ type ActivityDefinitionTableProps = {
 };
 
 const ActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
-    const {filteredData, getLoincOrICDCode} = useTableFiltering({
-      listData: props.listData,
-      searchTerm: "",
-    });
-    const { setDetailsId } = useAppStore();
-    const { basket, toggleItem } = useBasketStore(); 
-    
-    const getStatusBadge = (status: string) => {
+  const { filteredData, getLoincOrICDCode } = useTableFiltering({
+    listData: props.listData,
+    searchTerm: "",
+  });
+  const { setDetailsId } = useAppStore();
+  const { basket, toggleItem } = useBasketStore();
+
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case "active":
         return (
@@ -48,17 +48,17 @@ const ActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
     }
   };
   return (
-    <Card className="border-slate-200 shadow-sm">
-      <div className="rounded-md">
+    <Card className="shadow-sm">
+      <div className="rounded-md overflow-hidden">
         <Table>
-          <TableHeader className="bg-slate-50">
+          <TableHeader className="bg-slate-50/50">
             <TableRow>
               <TableHead className="w-[50px] text-center"></TableHead>
               <TableHead className="w-[350px]">Nazwa Badania</TableHead>
               <TableHead className="w-[180px]">Kod (LOINC/Local)</TableHead>
               <TableHead>Laboratorium</TableHead>
               <TableHead className="w-[120px]">Status</TableHead>
-              <TableHead className="text-right">Baza Wiedzy</TableHead>
+              <TableHead className="w-[50px] text-center">Baza Wiedzy</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -88,11 +88,10 @@ const ActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
                 return (
                   <TableRow
                     key={item.id}
-                    className={`group transition-colors ${
-                      isSelected
-                        ? "bg-blue-50/50 hover:bg-blue-50"
-                        : "hover:bg-slate-50/50"
-                    }`}
+                    className={`group transition-colors ${isSelected
+                      ? "bg-blue-50/50 hover:bg-blue-50"
+                      : "hover:bg-slate-50/50"
+                      }`}
                   >
                     <TableCell className="text-center">
                       <Checkbox
@@ -104,9 +103,8 @@ const ActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
 
                     <TableCell className="align-middle">
                       <span
-                        className={`font-semibold transition-colors ${
-                          isSelected ? "text-blue-700" : "text-slate-900"
-                        }`}
+                        className={`font-semibold transition-colors ${isSelected ? "text-blue-700" : "text-slate-900"
+                          }`}
                       >
                         {item.title || item.name}
                       </span>
@@ -124,7 +122,7 @@ const ActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
 
                     <TableCell className="align-middle">
                       <div className="inline-flex items-center rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-xs font-semibold text-slate-700">
-                        <TestTube2 className="mr-1 h-3 w-3 text-slate-500" />
+                        <TestTube2 className="mr-2 h-3 w-3 text-slate-500" />
                         {item.laboratory || "Lab. Centralne"}
                       </div>
                     </TableCell>
