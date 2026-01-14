@@ -51,6 +51,7 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
   const formatRangeValue = (value: number | undefined): number | undefined => {
     return value !== undefined ? Math.round(value * 100) / 100 : undefined;
   };
+
   const renderRangeOrAge = (
     data: {
       low?: { value?: number; unit?: string };
@@ -107,7 +108,8 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
                 variant="outline"
                 className="w-fit mb-2 text-blue-700 border-blue-200 bg-blue-50 font-mono"
               >
-                LOINC: {specimenData?.collectionCode || "N/A"}
+                LOINC:{" "}
+                {activityDefinitionData?.code?.coding?.[0]?.code || "N/A"}
               </Badge>
             </SheetHeader>
 
@@ -177,8 +179,17 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
                         <span className="block text-xs font-semibold text-slate-500">
                           Typ Materiału
                         </span>
-                        <div className="text-sm font-medium text-slate-900">
-                          {specimenData.collectionSystem}
+
+                        <div className="flex items-center gap-2 text-center text-sm font-medium  text-slate-900">
+                          <p className="uppercase">
+                            {specimenData.collectionSystem?.toLowerCase()}
+                          </p>
+                          <Badge
+                            variant="outline"
+                            className="w-fit text-blue-700 border-blue-200 bg-blue-50 font-mono"
+                          >
+                            KOD: {specimenData?.collectionCode || "N/A"}
+                          </Badge>
                         </div>
                       </div>
                     </div>
