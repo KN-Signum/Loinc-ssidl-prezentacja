@@ -55,7 +55,7 @@ export const useBasketStore = create<BasketStore>((set, get) => ({
     const basketItems = get().getBasketItems(allData);
     const groups: Record<string, ActivityDefinition[]> = {};
     basketItems.forEach((item) => {
-      const labName = item.laboratory || "Laboratorium Centralne";
+      const labName = "Laboratorium Centralne"; // nie ma w danych .laboratory, trzeba będzie zmienić jak poprawią HealthcareService
       if (!groups[labName]) groups[labName] = [];
       groups[labName].push(item);
     });

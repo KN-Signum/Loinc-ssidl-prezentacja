@@ -12,18 +12,23 @@ import {
 } from "../../../components/ui/table";
 import { Button } from "../../../components/ui/button";
 import { ActivityDefinition } from "../../../features/activityDefinition/ActivityDefinition";
+import { useAppStore } from "../../../store/appStore";
+import { useTableFiltering } from "../../../hooks/useTableFiltering";
+import { useBasketStore } from "../../../store/basketStore";
 
 type ActivityDefinitionTableProps = {
   listData: ActivityDefinition[];
   listLoading: boolean;
-  filteredData: ActivityDefinition[];
-  basket: Set<string>;
-  toggleSelection: (id: string) => void;
-  setDetailsId: (id: string) => void;
-  getLoincOrICDCode: (item: any) => {loinc:string,icd_9:string};
 };
 
 const ActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
+    const {filteredData, getLoincOrICDCode} = useTableFiltering({
+      listData: props.listData,
+      searchTerm: "",
+    });
+    const { setDetailsId } = useAppStore();
+    const { basket, toggleItem } = useBasketStore(); 
+    
     const getStatusBadge = (status: string) => {
     switch (status) {
       case "active":
@@ -66,7 +71,7 @@ const ActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
                   Ładowanie definicji...
                 </TableCell>
               </TableRow>
-            ) : props.filteredData.length === 0 ? (
+            ) : filteredData.length === 0 ? (
               <TableRow>
                 <TableCell
                   colSpan={6}
@@ -76,10 +81,10 @@ const ActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
                 </TableCell>
               </TableRow>
             ) : (
-              props.filteredData.map((item: any) => {
-                const isSelected = props.basket.has(item.id);
-                const loincCode = props.getLoincOrICDCode(item).loinc;
-                const icd9Code = props.getLoincOrICDCode(item).icd_9;
+              filteredData.map((item: any) => {
+                const isSelected = basket.has(item.id);
+                const loincCode = getLoincOrICDCode(item).loinc;
+                const icd9Code = getLoincOrICDCode(item).icd_9;
                 return (
                   <TableRow
                     key={item.id}
@@ -92,7 +97,7 @@ const ActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
                     <TableCell className="text-center">
                       <Checkbox
                         checked={isSelected}
-                        onCheckedChange={() => props.toggleSelection(item.id)}
+                        onCheckedChange={() => toggleItem(item.id)}
                         aria-label={`Select ${item.title}`}
                       />
                     </TableCell>
@@ -132,7 +137,7 @@ const ActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => props.setDetailsId(item.id)}
+                        onClick={() => setDetailsId(item.id)}
                         className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                       >
                         <Info className="mr-2 h-4 w-4" />

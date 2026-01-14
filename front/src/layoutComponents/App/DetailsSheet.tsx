@@ -15,10 +15,9 @@ import {
 } from "../../components/ui/sheet";
 import { Badge } from "../../components/ui/badge";
 import { CitationItem } from "../../features/citations/types";
+import { useAppStore } from "../../store/appStore";
 
 export interface DetailsSheetProps {
-  detailsId: string | null;
-  onClose: () => void;
   specimenData: any;
   observationData: any;
   activityDefinitionData: any;
@@ -29,14 +28,13 @@ export interface DetailsSheetProps {
 const DESCRIPTION_CHAR_LIMIT = 300;
 
 export const DetailsSheet: React.FC<DetailsSheetProps> = ({
-  detailsId,
-  onClose,
   specimenData,
   observationData,
   activityDefinitionData,
   citationsData,
   isLoading,
 }) => {
+  const { detailsId, setDetailsId } = useAppStore();
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
   useEffect(() => {
@@ -57,7 +55,7 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
     data: {
       low?: { value?: number; unit?: string };
       high?: { value?: number; unit?: string };
-    } | null,
+    } | null | undefined,
     label: string,
   ) => {
     if (!data) return null;
@@ -90,7 +88,7 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
   };
 
   return (
-    <Sheet open={!!detailsId} onOpenChange={(open) => !open && onClose()}>
+    <Sheet open={!!detailsId} onOpenChange={(open: boolean) => !open && setDetailsId(null)}>
       <SheetContent className="w-full mx-4 sm:max-w-xl overflow-y-auto">
         {isLoading ? (
           <div className="flex h-full items-center justify-center flex-col gap-4">
