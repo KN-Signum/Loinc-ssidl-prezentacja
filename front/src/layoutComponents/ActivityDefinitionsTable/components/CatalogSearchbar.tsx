@@ -10,25 +10,48 @@ import {
 } from "../../../components/ui/select";
 import { Button } from "../../../components/ui/button";
 import { useGetLocationDefinitionLB, useGetLocationDefinitionPP } from "../../../features/locationDefinition/Api.ts";
+import { useTableFiltering } from "../../../hooks/useTableFiltering.ts";
+import { useAppStore } from "../../../store/appStore.ts";
+import { LocationDefinition } from "../../../features/locationDefinition/LocationDefinition.ts";
+import { useEffect } from "react";
+import axios from "axios";
 
-type SearchbarProps = {
-  searchTerm: string;
-  setSearchTerm: (term: string) => void;
-  selectedLab: string;
-  setSelectedLab: (lab: string) => void;
-  selectedSpecimen: string;
-  setSelectedSpecimen: (specimen: string) => void;
-};
-const LABORATORIES = [
-  "Diagnostyka Łódź",
-  "Szpital Wojewódzki",
-  "Lab. Centralne",
-];
-const SPECIMENS = ["Krew żylna", "Mocz", "Surowica", "Osocze"];
-
-const Searchbar = (props: SearchbarProps) => {
+const Searchbar = () => {
   const {data: laboratories} = useGetLocationDefinitionLB();
   const {data: collectionPoints} = useGetLocationDefinitionPP();
+  const { searchTerm, setSearchTerm } = useAppStore();
+  const { selectedLab,setSelectedLab,selectedSpecimen, setSelectedSpecimen } = useTableFiltering({
+      listData: [],
+      searchTerm: "",
+  });
+  function getLoactionIds(...locations: LocationDefinition[][]) {
+    const ids = new Set<string>();
+    locations.forEach((locationList) => {
+      locationList?.forEach((location) => {
+        if (location.id) {
+          ids.add(location.id);
+        }
+      });
+    });
+    return ids;
+  }
+  useEffect(() => {
+    const labIds = getLoactionIds(laboratories , collectionPoints );
+    const fetchHealthareServices = async () => {
+      try {
+        const healthcareServices = await Promise.all(
+          Array.from(labIds).map((id) =>
+            axios.get(`http://localhost:5001/terminology/healthcare-services/location/${id}`)
+          )
+        );
+        console.log(labIds)
+        console.log(healthcareServices)
+      } catch (error) {
+        console.log(error)
+      }
+    }
+    fetchHealthareServices()
+  }, [laboratories,collectionPoints]);
   return (
     <Card className="border-slate-200 shadow-sm mb-6">
       <CardContent className="pt-6">
@@ -43,8 +66,8 @@ const Searchbar = (props: SearchbarProps) => {
               <Input
                 placeholder="Nazwa badania, kod LOINC..."
                 className="pl-9"
-                value={props.searchTerm}
-                onChange={(e) => props.setSearchTerm(e.target.value)}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
           </div>
@@ -52,11 +75,11 @@ const Searchbar = (props: SearchbarProps) => {
           {/* Filters */}
           <div className="w-full space-y-2 md:w-[280px]">
             <label className="text-sm font-medium leading-none">
-              Laboratorium
+              Laboratorium/Punkt pobrań
             </label>
             <Select
-              value={props.selectedLab}
-              onValueChange={props.setSelectedLab}
+              value={selectedLab}
+              onValueChange={setSelectedLab}
             >
               <SelectTrigger>
                 <div className="flex items-center gap-2 text-slate-600">
@@ -67,30 +90,13 @@ const Searchbar = (props: SearchbarProps) => {
               <SelectContent>
                 <SelectItem value="all">Wszystkie laboratoria</SelectItem>
                 {laboratories?.map((lab) => (
-                  <SelectItem key={lab.id} value={lab.id}>
+                  <SelectItem key={`${lab.id}-${Math.random()}`} value={lab.id}>
                     {lab.name}
                   </SelectItem>
                 ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="w-full space-y-2 md:w-[240px]">
-            <label className="text-sm font-medium leading-none">Punkty Pobrań</label>
-            <Select
-              value={props.selectedSpecimen}
-              onValueChange={props.setSelectedSpecimen}
-            >
-              <SelectTrigger>
-                <div className="flex items-center gap-2 text-slate-600">
-                  <FlaskConical className="h-4 w-4" />
-                  <SelectValue placeholder="Wszystkie" />
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Wszystkie punkty pobrań</SelectItem>
-                {collectionPoints?.map((point) => (
-                  <SelectItem key={point.id} value={point.id}>
+                {// Dodałem collectionPoint do id bo z bazy danych narazie mogą się powtarzać
+                collectionPoints?.map((point) => (
+                  <SelectItem key={`${point.id}-collectionPoint-${Math.random()}`} value={point.id+ "collectionPoint"}> 
                     {point.name}
                   </SelectItem>
                 ))}
@@ -102,9 +108,9 @@ const Searchbar = (props: SearchbarProps) => {
             variant="outline"
             className="shrink-0"
             onClick={() => {
-              props.setSearchTerm("");
-              props.setSelectedLab("all");
-              props.setSelectedSpecimen("all");
+              setSearchTerm("");
+              setSelectedLab("all");
+              setSelectedSpecimen("all");
             }}
           >
             <Filter className="mr-2 h-4 w-4" />

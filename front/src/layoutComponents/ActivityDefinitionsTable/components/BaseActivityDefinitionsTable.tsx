@@ -1,7 +1,6 @@
 import { Activity, Info, ChevronLeft, ChevronRight } from "lucide-react";
 import { Badge } from "../../../components/ui/badge";
 import { Card } from "../../../components/ui/card";
-import { Checkbox } from "../../../components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -12,15 +11,12 @@ import {
 } from "../../../components/ui/table";
 import { Button } from "../../../components/ui/button";
 import { ActivityDefinition } from "../../../features/activityDefinition/ActivityDefinition";
+import { useTableFiltering } from "../../../hooks/useTableFiltering";
+import { useAppStore } from "../../../store/appStore";
 
 type ActivityDefinitionTableProps = {
   listData: ActivityDefinition[];
   listLoading: boolean;
-  filteredData: ActivityDefinition[];
-  basket: Set<string>;
-  toggleSelection: (id: string) => void;
-  setDetailsId: (id: string) => void;
-  getLoincOrICDCode: (item: any) => {loinc:string,icd_9:string};
   paginationTokenNext?: string | null;
   paginationTokenPrev?: string | null;
   onNextPage?: () => void;
@@ -28,24 +24,11 @@ type ActivityDefinitionTableProps = {
 };
 
 const BaseActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
-    const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "active":
-        return (
-          <Badge className="bg-emerald-600 hover:bg-emerald-700">
-            Dostępne
-          </Badge>
-        );
-      case "unavailable":
-        return (
-          <Badge variant="secondary" className="text-slate-500">
-            Niedostępne
-          </Badge>
-        );
-      default:
-        return <Badge variant="outline">Aktywne</Badge>;
-    }
-  };
+  const {filteredData, getLoincOrICDCode} = useTableFiltering({
+    listData: props.listData,
+    searchTerm: "",
+  });
+  const { setDetailsId } = useAppStore();
 
   return (
     <Card className="border-slate-200 shadow-sm">
@@ -70,7 +53,7 @@ const BaseActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
                   Ładowanie definicji...
                 </TableCell>
               </TableRow>
-            ) : props.filteredData.length === 0 ? (
+            ) : filteredData.length === 0 ? (
               <TableRow>
                 <TableCell
                   colSpan={6}
@@ -80,27 +63,21 @@ const BaseActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
                 </TableCell>
               </TableRow>
             ) : (
-              props.filteredData.map((item: any) => {
-                const isSelected = props.basket.has(item.id);
-                const loincCode = props.getLoincOrICDCode(item).loinc;
-                const icd9Code = props.getLoincOrICDCode(item).icd_9;
+              filteredData.map((item: any) => {
+                
+                const loincCode = getLoincOrICDCode(item).loinc;
+                const icd9Code = getLoincOrICDCode(item).icd_9;
                 return (
                   <TableRow
                     key={item.id}
-                    className={`group transition-colors ${
-                      isSelected
-                        ? "bg-blue-50/50 hover:bg-blue-50"
-                        : "hover:bg-slate-50/50"
-                    }`}
+                    className={`group transition-colors hover:bg-slate-50`}
                   >
                     <TableCell className="text-center">
                     </TableCell>
 
                     <TableCell className="align-middle">
                       <span
-                        className={`font-semibold transition-colors ${
-                          isSelected ? "text-blue-700" : "text-slate-900"
-                        }`}
+                        className={`font-semibold transition-colors text-slate-900`}
                       >
                         {item.title || item.name}
                       </span>
@@ -123,7 +100,7 @@ const BaseActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => props.setDetailsId(item.id)}
+                        onClick={() => setDetailsId(item.id)}
                         className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                       >
                         <Info className="mr-2 h-4 w-4" />

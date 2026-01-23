@@ -3,19 +3,19 @@ import { ShoppingCart, AlertTriangle } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { ActivityDefinition } from "../../features/activityDefinition/ActivityDefinition";
 import { useBasketStore } from "../../store/basketStore";
+import { useAppStore } from "../../store/appStore";
 
 export interface BasketBarProps {
   basketItems: ActivityDefinition[];
   basketGroups: Record<string, ActivityDefinition[]>;
-  onProceedToOrder: () => void;
 }
 
 export const BasketBar: React.FC<BasketBarProps> = ({
   basketItems,
   basketGroups,
-  onProceedToOrder,
 }) => {
   const { clearBasket, getBasketCount } = useBasketStore();
+  const { setIsOrderModalOpen } = useAppStore();
   const basketCount = getBasketCount();
   const basketHasMultipleLabs = Object.keys(basketGroups).length > 1;
 
@@ -35,7 +35,7 @@ export const BasketBar: React.FC<BasketBarProps> = ({
             </h3>
           </div>
           <div className="text-sm text-slate-500 line-clamp-1">
-            Wybrano: {basketItems.map((i) => i.title || i.name).join(", ")}
+            Wybrano: {basketItems.map((i) => i.title ).join(", ")}
           </div>
           {basketHasMultipleLabs && (
             <div className="mt-2 flex items-center gap-2 rounded-md bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800 border border-amber-200">
@@ -56,7 +56,7 @@ export const BasketBar: React.FC<BasketBarProps> = ({
           <Button
             size="lg"
             className="bg-blue-600 hover:bg-blue-700 shadow-sm"
-            onClick={onProceedToOrder}
+            onClick={() => setIsOrderModalOpen(true)}
           >
             Przejdź do Zlecenia
           </Button>

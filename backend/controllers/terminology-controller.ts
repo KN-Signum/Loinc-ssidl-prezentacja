@@ -27,9 +27,11 @@ export const activityDefinitionByTitleControllerTerminology = async (
 };
 export const healthcareServicesControllerTerminology = async(req:Request,res:Response) =>{
   try {
+    const {locationId} = req.params
+    console.log(locationId)
     const healthcareServices = await fetchFhirResource(
         "HealthcareService",
-        "?location=Location/201"
+        `?location=Location/${locationId}`
       );
       res.json(healthcareServices);
   } catch (error) {

@@ -15,22 +15,20 @@ import { Label } from "../../components/ui/label";
 import { Input } from "../../components/ui/input";
 import { RadioGroup, RadioGroupItem } from "../../components/ui/radio-group";
 import { ActivityDefinition } from "../../features/activityDefinition/ActivityDefinition";
+import { useAppStore } from "../../store/appStore";
+import { useBasketStore } from "../../store/basketStore";
+
+const requesterName = "Dr n. med. Jan Kowalski";
 
 export interface OrderModalProps {
-  isOpen: boolean;
-  onClose: () => void;
   basketItems: ActivityDefinition[];
-  requesterName: string;
-  onSubmit: () => void;
 }
 
 export const OrderModal: React.FC<OrderModalProps> = ({
-  isOpen,
-  onClose,
   basketItems,
-  requesterName,
-  onSubmit,
 }) => {
+  const { isOrderModalOpen, setIsOrderModalOpen } = useAppStore();
+  const { clearBasket } = useBasketStore();
   const [orderPriority, setOrderPriority] = React.useState("routine");
   const [patientName, setPatientName] = React.useState("");
 
@@ -48,20 +46,21 @@ export const OrderModal: React.FC<OrderModalProps> = ({
       },
       orderDetails: basketItems.map((item) => ({
         reference: `ActivityDefinition/${item.id}`,
-        display: item.title || item.name,
+        display: item.title,
       })),
     };
     return JSON.stringify(serviceRequest, null, 2);
   };
 
   const handleSubmit = () => {
-    onSubmit();
+    setIsOrderModalOpen(false);
+    clearBasket();
     setOrderPriority("routine");
     setPatientName("");
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOrderModalOpen} onOpenChange={setIsOrderModalOpen}>
       <DialogContent className="sm:max-w-[700px]">
         <DialogHeader>
           <DialogTitle>Konfiguracja Zlecenia (ServiceRequest)</DialogTitle>
@@ -129,7 +128,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={() => setIsOrderModalOpen(false)}>
             Anuluj
           </Button>
           <Button

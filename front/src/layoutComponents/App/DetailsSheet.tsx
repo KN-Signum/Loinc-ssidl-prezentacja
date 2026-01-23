@@ -15,10 +15,9 @@ import {
 } from "../../components/ui/sheet";
 import { Badge } from "../../components/ui/badge";
 import { CitationItem } from "../../features/citations/types";
+import { useAppStore } from "../../store/appStore";
 
 export interface DetailsSheetProps {
-  detailsId: string | null;
-  onClose: () => void;
   specimenData: any;
   observationData: any;
   activityDefinitionData: any;
@@ -29,14 +28,13 @@ export interface DetailsSheetProps {
 const DESCRIPTION_CHAR_LIMIT = 300;
 
 export const DetailsSheet: React.FC<DetailsSheetProps> = ({
-  detailsId,
-  onClose,
   specimenData,
   observationData,
   activityDefinitionData,
   citationsData,
   isLoading,
 }) => {
+  const { detailsId, setDetailsId } = useAppStore();
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
   useEffect(() => {
@@ -53,11 +51,12 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
   const formatRangeValue = (value: number | undefined): number | undefined => {
     return value !== undefined ? Math.round(value * 100) / 100 : undefined;
   };
+
   const renderRangeOrAge = (
     data: {
       low?: { value?: number; unit?: string };
       high?: { value?: number; unit?: string };
-    } | null,
+    } | null | undefined,
     label: string,
   ) => {
     if (!data) return null;
@@ -90,7 +89,7 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
   };
 
   return (
-    <Sheet open={!!detailsId} onOpenChange={(open) => !open && onClose()}>
+    <Sheet open={!!detailsId} onOpenChange={(open: boolean) => !open && setDetailsId(null)}>
       <SheetContent className="w-full mx-4 sm:max-w-xl overflow-y-auto">
         {isLoading ? (
           <div className="flex h-full items-center justify-center flex-col gap-4">
@@ -109,7 +108,8 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
                 variant="outline"
                 className="w-fit mb-2 text-blue-700 border-blue-200 bg-blue-50 font-mono"
               >
-                LOINC: {specimenData?.collectionCode || "N/A"}
+                LOINC:{" "}
+                {activityDefinitionData?.code?.coding?.[0]?.code || "N/A"}
               </Badge>
             </SheetHeader>
 
@@ -179,8 +179,17 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
                         <span className="block text-xs font-semibold text-slate-500">
                           Typ Materiału
                         </span>
-                        <div className="text-sm font-medium text-slate-900">
-                          {specimenData.collectionSystem}
+
+                        <div className="flex items-center gap-2 text-center text-sm font-medium  text-slate-900">
+                          <p className="uppercase">
+                            {specimenData.collectionSystem?.toLowerCase()}
+                          </p>
+                          <Badge
+                            variant="outline"
+                            className="w-fit text-blue-700 border-blue-200 bg-blue-50 font-mono"
+                          >
+                            KOD: {specimenData?.collectionCode || "N/A"}
+                          </Badge>
                         </div>
                       </div>
                     </div>
