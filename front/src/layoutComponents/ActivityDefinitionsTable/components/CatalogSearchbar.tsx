@@ -12,15 +12,46 @@ import { Button } from "../../../components/ui/button";
 import { useGetLocationDefinitionLB, useGetLocationDefinitionPP } from "../../../features/locationDefinition/Api.ts";
 import { useTableFiltering } from "../../../hooks/useTableFiltering.ts";
 import { useAppStore } from "../../../store/appStore.ts";
+import { LocationDefinition } from "../../../features/locationDefinition/LocationDefinition.ts";
+import { useEffect } from "react";
+import axios from "axios";
 
 const Searchbar = () => {
   const {data: laboratories} = useGetLocationDefinitionLB();
   const {data: collectionPoints} = useGetLocationDefinitionPP();
-   const { searchTerm, setSearchTerm } = useAppStore();
-    const { selectedLab,setSelectedLab,selectedSpecimen, setSelectedSpecimen } = useTableFiltering({
+  const { searchTerm, setSearchTerm } = useAppStore();
+  const { selectedLab,setSelectedLab,selectedSpecimen, setSelectedSpecimen } = useTableFiltering({
       listData: [],
       searchTerm: "",
+  });
+  function getLoactionIds(...locations: LocationDefinition[][]) {
+    const ids = new Set<string>();
+    locations.forEach((locationList) => {
+      locationList?.forEach((location) => {
+        if (location.id) {
+          ids.add(location.id);
+        }
+      });
     });
+    return ids;
+  }
+  useEffect(() => {
+    const labIds = getLoactionIds(laboratories , collectionPoints );
+    const fetchHealthareServices = async () => {
+      try {
+        const healthcareServices = await Promise.all(
+          Array.from(labIds).map((id) =>
+            axios.get(`http://localhost:5001/terminology/healthcare-services/location/${id}`)
+          )
+        );
+        console.log(labIds)
+        console.log(healthcareServices)
+      } catch (error) {
+        console.log(error)
+      }
+    }
+    fetchHealthareServices()
+  }, [laboratories,collectionPoints]);
   return (
     <Card className="border-slate-200 shadow-sm mb-6">
       <CardContent className="pt-6">
@@ -59,13 +90,13 @@ const Searchbar = () => {
               <SelectContent>
                 <SelectItem value="all">Wszystkie laboratoria</SelectItem>
                 {laboratories?.map((lab) => (
-                  <SelectItem key={lab.id} value={lab.id}>
+                  <SelectItem key={`${lab.id}-${Math.random()}`} value={lab.id}>
                     {lab.name}
                   </SelectItem>
                 ))}
                 {// Dodałem collectionPoint do id bo z bazy danych narazie mogą się powtarzać
                 collectionPoints?.map((point) => (
-                  <SelectItem key={point.id + "collectionPoint"} value={point.id+ "collectionPoint"}> 
+                  <SelectItem key={`${point.id}-collectionPoint-${Math.random()}`} value={point.id+ "collectionPoint"}> 
                     {point.name}
                   </SelectItem>
                 ))}

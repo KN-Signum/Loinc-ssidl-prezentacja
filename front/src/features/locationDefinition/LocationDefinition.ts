@@ -24,7 +24,7 @@ export class LocationDefinition {
   managingOrganization: Reference;
 
   constructor(params: {
-    id?: string;
+    id: string;
     profile?: string[];
     identifier: Identifier[];
     name: string;
