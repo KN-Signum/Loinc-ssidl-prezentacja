@@ -194,7 +194,9 @@ export const locationController = async (
         ? "http://hl7.org.pl/fhir/ig/pl-lab/CodeSystem/pl-lab-facilityTypeCS|LA"
         : "http://hl7.org.pl/fhir/ig/pl-lab/CodeSystem/pl-lab-facilityTypeCS|PP";
     const locations = await fetchFhirResource("Location", `?type=${context}`);
-    res.status(200).json(locations.entry.map((entry: any) => entry.resource));
+    res
+      .status(200)
+      .json((locations.entry || []).map((entry: any) => entry.resource));
   } catch (error: any) {
     console.error("Error fetching locations:", error);
     res.status(500).json({ error: error.message });
