@@ -1,0 +1,5 @@
+node_modules/
+
+# Scraped FHIR resources – excluded from version control (can be large)
+resources/
+!resources/.gitkeep

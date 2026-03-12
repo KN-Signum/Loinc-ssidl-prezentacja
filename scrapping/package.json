@@ -1,0 +1,9 @@
+{
+  "type": "module",
+  "scripts": {
+    "fetch": "node fetch-all-resources.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3"
+  }
+}
