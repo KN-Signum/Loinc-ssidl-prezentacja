@@ -4,6 +4,8 @@ import {
   fetchPaginatedFhirResource,
 } from "../services/fhir-service.js";
 import { getActivityDefinitionsByTitle } from "../services/activity-definition.js";
+import { getSpecimenDefinitionsFromActivityDefinition } from "../services/specimen.js";
+import { getObservationDefinitionsFromActivityDefinition } from "../services/observation.js";
 
 const ageMap = new Map([
   ["a", "lat"],
@@ -53,7 +55,13 @@ export const observationDefinitionByIdController = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    const result = await fetchFhirResource("ObservationDefinition", `/${id}`);
+    const activityDefinition = await fetchFhirResource("ActivityDefinition", `/${id}`);
+    const refs = getObservationDefinitionsFromActivityDefinition(activityDefinition);
+    if (refs.length === 0) {
+      res.status(404).json({ error: "No ObservationDefinition linked to this ActivityDefinition" });
+      return;
+    }
+    const result = await fetchFhirResource("ObservationDefinition", `/${refs[0].id}`);
     res.status(200).json(result);
   } catch (error: any) {
     console.error("Error fetching observation definition:", error);
@@ -67,7 +75,13 @@ export const specimenDefinitionByIdController = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    const result = await fetchFhirResource("SpecimenDefinition", `/${id}`);
+    const activityDefinition = await fetchFhirResource("ActivityDefinition", `/${id}`);
+    const refs = getSpecimenDefinitionsFromActivityDefinition(activityDefinition);
+    if (refs.length === 0) {
+      res.status(404).json({ error: "No SpecimenDefinition linked to this ActivityDefinition" });
+      return;
+    }
+    const result = await fetchFhirResource("SpecimenDefinition", `/${refs[0].id}`);
     res.status(200).json(result);
   } catch (error: any) {
     console.error("Error fetching specimen definition:", error);
@@ -103,9 +117,15 @@ export const citationsController = async (
       return;
     }
 
+    const activityDefinition = await fetchFhirResource("ActivityDefinition", `/${observationID}`);
+    const refs = getObservationDefinitionsFromActivityDefinition(activityDefinition);
+    if (refs.length === 0) {
+      res.status(200).json({ message: "Brak danych" });
+      return;
+    }
     const observationDefinition = await fetchFhirResource(
       "ObservationDefinition",
-      `/${observationID}`,
+      `/${refs[0].id}`,
     );
     const qualifiedValues = observationDefinition.qualifiedValue || [];
 
@@ -146,6 +166,7 @@ export const citationsController = async (
 
         const citationId = citationReference.split("/")[1];
         const range = qv.range || null;
+        const gender = qv.gender;
         const age = mapAgeUnit(qv.age);
 
         try {
@@ -158,6 +179,7 @@ export const citationsController = async (
             citation: citationResponse,
             citationId,
             range,
+            gender,
             age,
           };
         } catch (error) {
@@ -167,6 +189,7 @@ export const citationsController = async (
               "Informacje źródłowe dla wartości referencyjnych badania laboratoryjnego są niedostępne.",
             citationId,
             range,
+            gender,
             age,
           };
         }

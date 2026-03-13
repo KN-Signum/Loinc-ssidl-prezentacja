@@ -10,6 +10,7 @@ export class SpecimenDefinition {
   id: string;
   collectionCode: string;
   collectionSystem: string;
+  display: string;
   patientPreparation: string[];
   handlingInstructions: HandlingInstruction[];
 
@@ -19,6 +20,7 @@ export class SpecimenDefinition {
     const mainCoding = data.typeCollected?.coding?.[0];
     this.collectionCode = mainCoding?.code || "N/A";
     this.collectionSystem = mainCoding?.system || "N/A";
+    this.display = mainCoding?.display || "N/A";
 
     this.patientPreparation =
       data.patientPreparation?.map((prep) => prep.text) || [];

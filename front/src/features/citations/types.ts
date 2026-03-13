@@ -14,5 +14,6 @@ export interface CitationItem {
   citationId?: string;
   age?: CitationRange | null;
   range?: CitationRange | null;
+  gender?: string;
   message?: string;
 }
