@@ -7,12 +7,17 @@ import { getActivityDefinitionsByTitle } from "../services/activity-definition.j
 import { getSpecimenDefinitionsFromActivityDefinition } from "../services/specimen.js";
 import { getObservationDefinitionsFromActivityDefinition } from "../services/observation.js";
 
-const ageMap = new Map([
-  ["a", "lat"],
-  ["mo", "miesięcy"],
-  ["d", "dni"],
-  ["wk", "tygodni"],
-]);
+const AGE_UNITS_VALUE_SET_ID = "pl-base-ageUnit-VS";
+
+async function getAgeUnitMap(): Promise<Map<string, string>> {
+  try {
+    const valueSet = await fetchFhirResource("ValueSet", `/${AGE_UNITS_VALUE_SET_ID}`);
+    const concepts = valueSet?.compose?.include?.[0]?.concept ?? [];
+    return new Map(concepts.map((c: { code: string; display: string }) => [c.code, c.display]));
+  } catch {
+    return new Map([["a", "lat"], ["mo", "miesięcy"], ["d", "dni"], ["wk", "tygodni"]]);
+  }
+}
 
 export const activityDefinitionByTitleController = async (
   req: Request,
@@ -134,19 +139,20 @@ export const citationsController = async (
       return;
     }
 
+    const ageUnitMap = await getAgeUnitMap();
     const mapAgeUnit = (age: any) => {
       if (!age) return null;
       const mappedAge = { ...age };
       if (mappedAge.low?.unit) {
         mappedAge.low = {
           ...mappedAge.low,
-          unit: ageMap.get(mappedAge.low.unit) || mappedAge.low.unit,
+          unit: ageUnitMap.get(mappedAge.low.unit) || mappedAge.low.unit,
         };
       }
       if (mappedAge.high?.unit) {
         mappedAge.high = {
           ...mappedAge.high,
-          unit: ageMap.get(mappedAge.high.unit) || mappedAge.high.unit,
+          unit: ageUnitMap.get(mappedAge.high.unit) || mappedAge.high.unit,
         };
       }
       return mappedAge;
@@ -221,6 +227,24 @@ export const locationController = async (
     res.status(200).json(locations.entry.map((entry: any) => entry.resource));
   } catch (error: any) {
     console.error("Error fetching locations:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const ageUnitsController = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const valueSet = await fetchFhirResource("ValueSet", `/${AGE_UNITS_VALUE_SET_ID}`);
+    const concepts = valueSet?.compose?.include?.[0]?.concept ?? [];
+    const units: Record<string, string> = {};
+    for (const c of concepts) {
+      units[c.code] = c.display;
+    }
+    res.status(200).json(units);
+  } catch (error: any) {
+    console.error("Error fetching age units:", error);
     res.status(500).json({ error: error.message });
   }
 };

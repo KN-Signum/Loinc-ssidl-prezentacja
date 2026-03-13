@@ -7,6 +7,7 @@ import {
   locationController,
   observationDefinitionByIdController,
   specimenDefinitionByIdController,
+  ageUnitsController,
 } from "../controllers/knowledge-controller.js";
 import { fetchFhirResource } from "../services/fhir-service.js";
 
@@ -25,6 +26,8 @@ router.get("/condition-definitions/:id", conditionDefinitionByIdController);
 router.get("/citations/:observationID", citationsController);
 
 router.get("/locations/:type", locationController);
+
+router.get("/age-units", ageUnitsController);
 
 
 export default router;
