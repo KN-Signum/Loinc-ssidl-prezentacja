@@ -13,7 +13,7 @@ export const useGetLocationDefinitionLB = () => {
     const fetchLocations = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`http://localhost:5001/definitions/locations/lab`);
+        const response = await axios.get(`http://localhost:5001/knowledge/locations/lab`);
         setData(response.data);
         console.log(response.data)
       } catch (error) {
@@ -35,7 +35,7 @@ export const useGetLocationDefinitionPP = () => {
     const fetchLocations = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`http://localhost:5001/definitions/locations/pp`);
+        const response = await axios.get(`http://localhost:5001/knowledge/locations/pp`);
         setData(response.data);
         console.log(response.data)
       } catch (error) {

@@ -1,9 +1,7 @@
-type BaseSwitcherProps = {
-  knowledgeBase: boolean;
-  setKnowledgeBase: (value: boolean) => void;
-};
+import { useAppStore } from "../../store/appStore";
 
-const BaseSwitcher = ({ knowledgeBase, setKnowledgeBase }: BaseSwitcherProps) => {
+const BaseSwitcher = () => {
+  const { knowledgeBase, setKnowledgeBase } = useAppStore();
   return (
     <div
       role="tablist"
@@ -20,7 +18,7 @@ const BaseSwitcher = ({ knowledgeBase, setKnowledgeBase }: BaseSwitcherProps) =>
         }`}
         onClick={() => setKnowledgeBase(false)}
       >
-        Katalog usług medycznych
+        Lista usług katalogowych
       </button>
       <button
         role="tab"

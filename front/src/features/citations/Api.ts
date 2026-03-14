@@ -1,24 +1,26 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { SpecimenDefinition } from "./SpecimenDefinition";
+import { CitationItem } from "./types";
 
 const API_BASE_URL = "http://localhost:5001/knowledge";
 
-interface UseSpecimenDefinitionResult {
-  data: SpecimenDefinition | null;
+interface UseCitationsResult {
+  data: CitationItem[] | { message: string } | null;
   loading: boolean;
   error: string | null;
 }
 
-export const useGetSpecimenDefinition = (
-  id: string | null,
-): UseSpecimenDefinitionResult => {
-  const [data, setData] = useState<SpecimenDefinition | null>(null);
+export const useGetCitations = (
+  observationId: string | null,
+): UseCitationsResult => {
+  const [data, setData] = useState<CitationItem[] | { message: string } | null>(
+    null,
+  );
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!id) {
+    if (!observationId) {
       setData(null);
       return;
     }
@@ -28,15 +30,15 @@ export const useGetSpecimenDefinition = (
         setLoading(true);
         setError(null);
         const response = await axios.get(
-          `${API_BASE_URL}/specimen-definitions/${id}`,
+          `${API_BASE_URL}/citations/${observationId}`,
         );
-        setData(new SpecimenDefinition(response.data));
+        setData(response.data);
       } catch (err: any) {
         console.error(err);
         setError(
           err.response?.data?.error ||
             err.message ||
-            "Failed to fetch specimen definition",
+            "Failed to fetch citations",
         );
         setData(null);
       } finally {
@@ -45,7 +47,7 @@ export const useGetSpecimenDefinition = (
     };
 
     fetchData();
-  }, [id]);
+  }, [observationId]);
 
   return { data, loading, error };
 };

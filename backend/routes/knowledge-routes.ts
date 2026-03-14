@@ -7,7 +7,8 @@ import {
   locationController,
   observationDefinitionByIdController,
   specimenDefinitionByIdController,
-} from "../controlers/definition-controler.js";
+  ageUnitsController,
+} from "../controllers/knowledge-controller.js";
 import { fetchFhirResource } from "../services/fhir-service.js";
 
 const router = Router();
@@ -26,12 +27,7 @@ router.get("/citations/:observationID", citationsController);
 
 router.get("/locations/:type", locationController);
 
-router.get("/healthcare-services", async (req, res) => {
-  const healthcareServices = await fetchFhirResource(
-    "HealthcareService",
-    "?name:contains=a"
-  );
-  res.json(healthcareServices);
-});
+router.get("/age-units", ageUnitsController);
+
 
 export default router;

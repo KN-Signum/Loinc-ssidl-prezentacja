@@ -2,7 +2,8 @@ import express from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
 import dotenv from "dotenv";
-import definitionRouter from "./routes/definition-routes.js";
+import knowledgeRouter from "./routes/knowledge-routes.js";
+import terminologyRouter from "./routes/terminology-routes.js";
 
 dotenv.config();
 
@@ -10,7 +11,8 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-app.use("/definitions", definitionRouter);
+app.use("/knowledge", knowledgeRouter);
+app.use("/terminology", terminologyRouter);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

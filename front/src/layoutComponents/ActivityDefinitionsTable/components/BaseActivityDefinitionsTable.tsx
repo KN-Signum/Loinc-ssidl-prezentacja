@@ -1,7 +1,6 @@
 import { Activity, Info, ChevronLeft, ChevronRight } from "lucide-react";
 import { Badge } from "../../../components/ui/badge";
 import { Card } from "../../../components/ui/card";
-import { Checkbox } from "../../../components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -12,16 +11,12 @@ import {
 } from "../../../components/ui/table";
 import { Button } from "../../../components/ui/button";
 import { ActivityDefinition } from "../../../features/activityDefinition/ActivityDefinition";
-import { useEffect } from "react";
+import { useTableFiltering } from "../../../hooks/useTableFiltering";
+import { useAppStore } from "../../../store/appStore";
 
 type ActivityDefinitionTableProps = {
   listData: ActivityDefinition[];
   listLoading: boolean;
-  filteredData: ActivityDefinition[];
-  basket: Set<string>;
-  toggleSelection: (id: string) => void;
-  setDetailsId: (id: string) => void;
-  getLoincOrICDCode: (item: any) => string;
   paginationTokenNext?: string | null;
   paginationTokenPrev?: string | null;
   onNextPage?: () => void;
@@ -29,24 +24,11 @@ type ActivityDefinitionTableProps = {
 };
 
 const BaseActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
-    const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "active":
-        return (
-          <Badge className="bg-emerald-600 hover:bg-emerald-700">
-            Dostępne
-          </Badge>
-        );
-      case "unavailable":
-        return (
-          <Badge variant="secondary" className="text-slate-500">
-            Niedostępne
-          </Badge>
-        );
-      default:
-        return <Badge variant="outline">Aktywne</Badge>;
-    }
-  };
+  const {filteredData, getLoincOrICDCode} = useTableFiltering({
+    listData: props.listData,
+    searchTerm: "",
+  });
+  const { setDetailsId } = useAppStore();
 
   return (
     <Card className="border-slate-200 shadow-sm">
@@ -56,9 +38,9 @@ const BaseActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
             <TableRow>
               <TableHead className="w-[50px] text-center"></TableHead>
               <TableHead className="w-[350px]">Nazwa Badania</TableHead>
-              <TableHead className="w-[180px]">Kod (LOINC/Local)</TableHead>
-              <TableHead className="w-[120px]">Status</TableHead>
-              <TableHead className="text-right">Baza Wiedzy</TableHead>
+              <TableHead className="w-[180px]">Kod (LOINC)</TableHead>
+              <TableHead className="w-[120px]">Kod ICD-9</TableHead>
+              <TableHead className="text-right"> </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -71,7 +53,7 @@ const BaseActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
                   Ładowanie definicji...
                 </TableCell>
               </TableRow>
-            ) : props.filteredData.length === 0 ? (
+            ) : filteredData.length === 0 ? (
               <TableRow>
                 <TableCell
                   colSpan={6}
@@ -81,31 +63,21 @@ const BaseActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
                 </TableCell>
               </TableRow>
             ) : (
-              props.filteredData.map((item: any) => {
-                const isSelected = props.basket.has(item.id);
-                const codeDisplay = props.getLoincOrICDCode(item);
+              filteredData.map((item: any) => {
+                
+                const loincCode = getLoincOrICDCode(item).loinc;
+                const icd9Code = getLoincOrICDCode(item).icd_9;
                 return (
                   <TableRow
                     key={item.id}
-                    className={`group transition-colors ${
-                      isSelected
-                        ? "bg-blue-50/50 hover:bg-blue-50"
-                        : "hover:bg-slate-50/50"
-                    }`}
+                    className={`group transition-colors hover:bg-slate-50`}
                   >
                     <TableCell className="text-center">
-                      <Checkbox
-                        checked={isSelected}
-                        onCheckedChange={() => props.toggleSelection(item.id)}
-                        aria-label={`Select ${item.title}`}
-                      />
                     </TableCell>
 
                     <TableCell className="align-middle">
                       <span
-                        className={`font-semibold transition-colors ${
-                          isSelected ? "text-blue-700" : "text-slate-900"
-                        }`}
+                        className={`font-semibold transition-colors text-slate-900`}
                       >
                         {item.title || item.name}
                       </span>
@@ -117,18 +89,18 @@ const BaseActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
                         className="px-2 py-1 font-mono text-xs bg-slate-50 text-slate-600 border-slate-200"
                       >
                         <Activity className="h-3 w-3 mr-1 inline-block" />
-                        {codeDisplay}
+                        {loincCode}
                       </Badge>
                     </TableCell>
                     <TableCell className="align-middle">
-                      {getStatusBadge(item.status || "active")}
+                      {icd9Code}
                     </TableCell>
 
                     <TableCell className="text-right align-middle">
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => props.setDetailsId(item.id)}
+                        onClick={() => setDetailsId(item.id)}
                         className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                       >
                         <Info className="mr-2 h-4 w-4" />

@@ -1,11 +1,9 @@
 import { Stethoscope } from "lucide-react";
 import BaseSwitcher from "../BaseSwitcher/BaseSwitcher";
-type HeaderProps = {
-  requesterName: string,
-  knowledgeBase: boolean;
-  setKnowledgeBase: (value: boolean) => void;
-};
-const Header = ( { requesterName, knowledgeBase, setKnowledgeBase }: HeaderProps ) => {
+
+const requesterName = "Dr n. med. Jan Kowalski";
+
+const Header = () => {
     return (
         <header className="sticky top-0 z-20 w-full border-b bg-white px-6 py-4 shadow-sm">
         <div className="mx-auto flex max-w-7xl items-center">
@@ -20,7 +18,7 @@ const Header = ( { requesterName, knowledgeBase, setKnowledgeBase }: HeaderProps
             </div>
           </div>
           <div className="flex-1 flex justify-center min-w-0 px-2">
-            <BaseSwitcher knowledgeBase={knowledgeBase} setKnowledgeBase={setKnowledgeBase} />
+            <BaseSwitcher />
           </div>
           <div className="flex items-center gap-4 min-w-0">
             <div className="hidden text-right text-sm leading-tight text-slate-500 md:block">

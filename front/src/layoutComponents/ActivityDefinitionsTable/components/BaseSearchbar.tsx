@@ -1,28 +1,17 @@
-import { Building2, Filter, FlaskConical, Search } from "lucide-react";
+import { Filter, Search } from "lucide-react";
 import { Card, CardContent } from "../../../components/ui/card";
 import { Input } from "../../../components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../../components/ui/select";
 import { Button } from "../../../components/ui/button";
-import { useGetLocationDefinitionLB, useGetLocationDefinitionPP } from "../../../features/locationDefinition/Api.ts";
+import { useAppStore } from "../../../store/appStore";
+import { useTableFiltering } from "../../../hooks/useTableFiltering";
 
-type SearchbarProps = {
-  searchTerm: string;
-  setSearchTerm: (term: string) => void;
-  selectedLab: string;
-  setSelectedLab: (lab: string) => void;
-  selectedSpecimen: string;
-  setSelectedSpecimen: (specimen: string) => void;
-};
 
-const BaseSearchbar = (props: SearchbarProps) => {
-  const {data: laboratories} = useGetLocationDefinitionLB();
-  const {data: collectionPoints} = useGetLocationDefinitionPP();
+const BaseSearchbar = () => {
+  const { searchTerm, setSearchTerm } = useAppStore();
+  const { setSelectedLab, setSelectedSpecimen } = useTableFiltering({
+    listData: [],
+    searchTerm: "",
+  });
   return (
     <Card className="border-slate-200 shadow-sm mb-6">
       <CardContent className="pt-6">
@@ -37,8 +26,8 @@ const BaseSearchbar = (props: SearchbarProps) => {
               <Input
                 placeholder="Nazwa badania, kod LOINC..."
                 className="pl-9"
-                value={props.searchTerm}
-                onChange={(e) => props.setSearchTerm(e.target.value)}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
           </div>
@@ -47,9 +36,9 @@ const BaseSearchbar = (props: SearchbarProps) => {
             variant="outline"
             className="shrink-0"
             onClick={() => {
-              props.setSearchTerm("");
-              props.setSelectedLab("all");
-              props.setSelectedSpecimen("all");
+              setSearchTerm("");
+              setSelectedLab("all");
+              setSelectedSpecimen("all");
             }}
           >
             <Filter className="mr-2 h-4 w-4" />
