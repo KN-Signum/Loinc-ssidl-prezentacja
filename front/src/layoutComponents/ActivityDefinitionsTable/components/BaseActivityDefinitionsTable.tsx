@@ -10,6 +10,11 @@ import {
   TableRow,
 } from "../../../components/ui/table";
 import { Button } from "../../../components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "../../../components/ui/tooltip";
 import { ActivityDefinition } from "../../../features/activityDefinition/ActivityDefinition";
 import { useTableFiltering } from "../../../hooks/useTableFiltering";
 import { useAppStore } from "../../../store/appStore";
@@ -65,8 +70,12 @@ const BaseActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
             ) : (
               filteredData.map((item: any) => {
                 
-                const loincCode = getLoincOrICDCode(item).loinc;
-                const icd9Code = getLoincOrICDCode(item).icd_9;
+                const { loinc, icd_9, icd_9_display } = getLoincOrICDCode(item);
+                const icdTooltipText = icd_9_display
+                  ? icd_9_display
+                  : icd_9 === "Brak kodu"
+                    ? "Brak kodu ICD-9 dla tego zasobu."
+                    : "Brak nazwy zasobu w słowniku ICD (code.coding.display).";
                 return (
                   <TableRow
                     key={item.id}
@@ -89,11 +98,24 @@ const BaseActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
                         className="px-2 py-1 font-mono text-xs bg-slate-50 text-slate-600 border-slate-200"
                       >
                         <Activity className="h-3 w-3 mr-1 inline-block" />
-                        {loincCode}
+                        {loinc}
                       </Badge>
                     </TableCell>
                     <TableCell className="align-middle">
-                      {icd9Code}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="cursor-pointer">
+                            {icd_9}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent
+                          side="top"
+                          sideOffset={8}
+                          className="border-blue-300"
+                        >
+                          {icdTooltipText}
+                        </TooltipContent>
+                      </Tooltip>
                     </TableCell>
 
                     <TableCell className="text-right align-middle">
