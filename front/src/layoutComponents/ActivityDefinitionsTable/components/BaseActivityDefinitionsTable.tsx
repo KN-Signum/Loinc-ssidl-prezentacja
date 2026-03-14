@@ -18,10 +18,12 @@ import {
 import { ActivityDefinition } from "../../../features/activityDefinition/ActivityDefinition";
 import { useTableFiltering } from "../../../hooks/useTableFiltering";
 import { useAppStore } from "../../../store/appStore";
+import { TableErrorState } from "./TableErrorState";
 
 type ActivityDefinitionTableProps = {
   listData: ActivityDefinition[];
   listLoading: boolean;
+  listError?: string | null;
   paginationTokenNext?: string | null;
   paginationTokenPrev?: string | null;
   onNextPage?: () => void;
@@ -58,6 +60,8 @@ const BaseActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
                   Ładowanie definicji...
                 </TableCell>
               </TableRow>
+            ) : props.listError ? (
+              <TableErrorState error={props.listError} colSpan={6} />
             ) : filteredData.length === 0 ? (
               <TableRow>
                 <TableCell

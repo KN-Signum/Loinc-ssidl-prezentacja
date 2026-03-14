@@ -7,6 +7,7 @@ import { useAppStore } from "../../store/appStore";
 export interface MainContentProps {
   listData: ActivityDefinition[];
   listLoading: boolean;
+  listError?: string | null;
   paginationTokenNext?: string | null;
   paginationTokenPrev?: string | null;
   fetchNextPage?: () => void;
@@ -16,6 +17,7 @@ export interface MainContentProps {
 export const MainContent: React.FC<MainContentProps> = ({
   listData,
   listLoading,
+  listError,
   paginationTokenNext,
   paginationTokenPrev,
   fetchNextPage,
@@ -29,6 +31,7 @@ export const MainContent: React.FC<MainContentProps> = ({
         <BaseTable
           listData={listData}
           listLoading={listLoading}
+          listError={listError}
           paginationTokenNext={paginationTokenNext}
           paginationTokenPrev={paginationTokenPrev}
           fetchNextPage={fetchNextPage}
@@ -38,6 +41,7 @@ export const MainContent: React.FC<MainContentProps> = ({
         <CatalogTable
           listData={listData}
           listLoading={listLoading}
+          listError={listError}
         />
       )}
     </main>

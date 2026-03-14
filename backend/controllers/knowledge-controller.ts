@@ -2,12 +2,23 @@ import { Request, Response } from "express";
 import {
   fetchFhirResource,
   fetchPaginatedFhirResource,
+  FhirServiceError,
 } from "../services/fhir-service.js";
 import { getActivityDefinitionsByTitle } from "../services/activity-definition.js";
 import { getSpecimenDefinitionsFromActivityDefinition } from "../services/specimen.js";
 import { getObservationDefinitionsFromActivityDefinition } from "../services/observation.js";
 
 const AGE_UNITS_VALUE_SET_ID = "pl-base-ageUnit-VS";
+
+function handleFhirError(res: Response, error: unknown): void {
+  if (error instanceof FhirServiceError) {
+    res.status(error.statusCode).json({ error: error.message });
+  } else if (error instanceof Error) {
+    res.status(500).json({ error: error.message });
+  } else {
+    res.status(500).json({ error: "Nieznany błąd serwera." });
+  }
+}
 
 async function getAgeUnitMap(): Promise<Map<string, string>> {
   try {
@@ -34,9 +45,9 @@ export const activityDefinitionByTitleController = async (
     }
     const result = await getActivityDefinitionsByTitle(title as string, true);
     res.status(200).json(result);
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error fetching activity definitions:", error);
-    res.status(500).json({ error: error.message });
+    handleFhirError(res, error);
   }
 };
 
@@ -48,9 +59,9 @@ export const activityDefinitionByIdController = async (
     const { id } = req.params;
     const result = await fetchFhirResource("ActivityDefinition", `/${id}`);
     res.status(200).json(result);
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error fetching activity definition:", error);
-    res.status(500).json({ error: error.message });
+    handleFhirError(res, error);
   }
 };
 
@@ -68,9 +79,9 @@ export const observationDefinitionByIdController = async (
     }
     const result = await fetchFhirResource("ObservationDefinition", `/${refs[0].id}`);
     res.status(200).json(result);
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error fetching observation definition:", error);
-    res.status(500).json({ error: error.message });
+    handleFhirError(res, error);
   }
 };
 
@@ -88,9 +99,9 @@ export const specimenDefinitionByIdController = async (
     }
     const result = await fetchFhirResource("SpecimenDefinition", `/${refs[0].id}`);
     res.status(200).json(result);
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error fetching specimen definition:", error);
-    res.status(500).json({ error: error.message });
+    handleFhirError(res, error);
   }
 };
 
@@ -102,9 +113,9 @@ export const conditionDefinitionByIdController = async (
     const { id } = req.params;
     const result = await fetchFhirResource("ConditionDefinition", `/${id}`);
     res.status(200).json(result);
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error fetching condition definition:", error);
-    res.status(500).json({ error: error.message });
+    handleFhirError(res, error);
   }
 };
 
@@ -207,9 +218,9 @@ export const citationsController = async (
     );
 
     res.status(200).json(filteredCitations);
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error fetching citations:", error);
-    res.status(500).json({ error: error.message });
+    handleFhirError(res, error);
   }
 };
 export const locationController = async (
@@ -225,9 +236,9 @@ export const locationController = async (
     console.log(type);
     const locations = await fetchFhirResource("Location", `?type=${context}`);
     res.status(200).json(locations.entry.map((entry: any) => entry.resource));
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error fetching locations:", error);
-    res.status(500).json({ error: error.message });
+    handleFhirError(res, error);
   }
 };
 
@@ -243,8 +254,8 @@ export const ageUnitsController = async (
       units[c.code] = c.display;
     }
     res.status(200).json(units);
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error fetching age units:", error);
-    res.status(500).json({ error: error.message });
+    handleFhirError(res, error);
   }
 };
