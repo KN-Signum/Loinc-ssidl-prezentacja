@@ -1,9 +1,12 @@
 import { Stethoscope } from "lucide-react";
 import BaseSwitcher from "../BaseSwitcher/BaseSwitcher";
+import { useAppStore } from "../../store/appStore";
+import { ShowSettings } from "../Settings/Settings";
 
 const requesterName = "Dr n. med. Jan Kowalski";
 
 const Header = () => {
+    const { isPreviewMode } = useAppStore();
     return (
         <header className="sticky top-0 z-20 w-full border-b bg-white px-6 py-4 shadow-sm">
         <div className="mx-auto flex max-w-7xl items-center">
@@ -18,7 +21,7 @@ const Header = () => {
             </div>
           </div>
           <div className="flex-1 flex justify-center min-w-0 px-2">
-            <BaseSwitcher />
+            {isPreviewMode && <BaseSwitcher />}
           </div>
           <div className="flex items-center gap-4 min-w-0">
             <div className="hidden text-right text-sm leading-tight text-slate-500 md:block">
@@ -31,6 +34,7 @@ const Header = () => {
               <span className="text-sm font-semibold">JK</span>
             </div>
           </div>
+          <ShowSettings />
         </div>
       </header>
     );

@@ -21,11 +21,12 @@ export const MainContent: React.FC<MainContentProps> = ({
   fetchNextPage,
   fetchPrevPage,
 }) => {
-  const { knowledgeBase } = useAppStore();
+  const { knowledgeBase, isPreviewMode } = useAppStore();
+  const showKnowledgeBase = !isPreviewMode || knowledgeBase;
 
   return (
     <main className="mx-auto max-w-7xl p-6">
-      {knowledgeBase ? (
+      {showKnowledgeBase ? (
         <BaseTable
           listData={listData}
           listLoading={listLoading}
