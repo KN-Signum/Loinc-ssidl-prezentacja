@@ -62,6 +62,17 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
     setIsCitationsAllVisible(false);
   }, [detailsId]);
 
+  const nfzCodes: string[] = (() => {
+    const extensions: any[] = activityDefinitionData?.extension ?? [];
+    return extensions
+      .filter((e: any) => e.url?.endsWith("activityDefinition-nfzCode"))
+      .map((nfzExt: any) => {
+        const subExts: any[] = nfzExt.extension ?? [];
+        return subExts.find((e: any) => e.url === "type")?.valueCoding?.code ?? "";
+      })
+      .filter(Boolean);
+  })();
+
   const description = activityDefinitionData?.description || "";
   const isDescriptionLong = description.length > DESCRIPTION_CHAR_LIMIT;
   const displayedDescription =
@@ -166,17 +177,27 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
               <SheetTitle className="text-2xl leading-tight">
                 {observationData?.preferredReportName || "Szczegóły Badania"}
               </SheetTitle>
-              <Badge
-                variant="outline"
-                className="w-fit mb-2 text-blue-700 border-blue-200 bg-blue-50 font-mono"
-              >
-                LOINC:{" "}
-                {activityDefinitionData?.code?.coding?.[0]?.code || "N/A"}
-              </Badge>
+              <div className="flex flex-wrap gap-2 mb-2">
+                <Badge
+                  variant="outline"
+                  className="w-fit text-blue-700 border-blue-200 bg-blue-50 font-mono"
+                >
+                  LOINC:{" "}
+                  {activityDefinitionData?.code?.coding?.[0]?.code || "N/A"}
+                </Badge>
+                {nfzCodes.map((code, idx) => (
+                  <Badge
+                    key={idx}
+                    variant="outline"
+                    className="w-fit text-emerald-700 border-emerald-200 bg-emerald-50"
+                  >
+                    Kod NFZ: {code}
+                  </Badge>
+                ))}
+              </div>
             </SheetHeader>
 
             <div className="space-y-8">
-              {/* Opis */}
               {activityDefinitionData?.description && (
                 <section className="rounded-lg border border-slate-200 bg-slate-50/50 p-4">
                   <h4 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-2">
