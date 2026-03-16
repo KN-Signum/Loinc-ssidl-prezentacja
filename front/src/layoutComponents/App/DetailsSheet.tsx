@@ -6,6 +6,9 @@ import {
   CheckCircle2,
   Truck,
   BookOpen,
+  Microscope,
+  Calendar,
+  UserCircle,
 } from "lucide-react";
 import {
   Sheet,
@@ -21,11 +24,14 @@ import {
   AccordionContent,
 } from "../../components/ui/accordion";
 import { CitationItem } from "../../features/citations/types";
+import { ObservationDefinitionListItem } from "../../features/observationDefinition/Api";
 import { useAppStore } from "../../store/appStore";
 
 export interface DetailsSheetProps {
   specimenData: any;
   observationData: any;
+  observationList: ObservationDefinitionListItem[];
+  observationListLoading: boolean;
   activityDefinitionData: any;
   citationsData: CitationItem[] | { message: string } | null;
   isLoading: boolean;
@@ -45,6 +51,8 @@ type GenderFilter = "all" | "male" | "female";
 export const DetailsSheet: React.FC<DetailsSheetProps> = ({
   specimenData,
   observationData,
+  observationList,
+  observationListLoading,
   activityDefinitionData,
   citationsData,
   isLoading,
@@ -58,15 +66,16 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
     setGenderFilter("all");
   }, [detailsId]);
 
-  const nfzCodes: string[] = (() => {
+  const nfzCodes: { code: string; display: string }[] = (() => {
     const extensions: any[] = activityDefinitionData?.extension ?? [];
     return extensions
       .filter((e: any) => e.url?.endsWith("activityDefinition-nfzCode"))
       .map((nfzExt: any) => {
         const subExts: any[] = nfzExt.extension ?? [];
-        return (
-          subExts.find((e: any) => e.url === "type")?.valueCoding?.code ?? ""
-        );
+        const coding = subExts.find((e: any) => e.url === "type")?.valueCoding;
+        return coding?.code
+          ? { code: coding.code, display: coding.display ?? coding.code }
+          : null;
       })
       .filter(Boolean);
   })();
@@ -131,13 +140,13 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
                   LOINC:{" "}
                   {activityDefinitionData?.code?.coding?.[0]?.code || "N/A"}
                 </Badge>
-                {nfzCodes.map((code, idx) => (
+                {nfzCodes.map((nfz, idx) => (
                   <Badge
                     key={idx}
                     variant="outline"
                     className="w-fit text-emerald-700 border-emerald-200 bg-emerald-50"
                   >
-                    Kod NFZ: {code}
+                    {nfz.display}: {nfz.code}
                   </Badge>
                 ))}
               </div>
@@ -470,6 +479,53 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
                       </p>
                     )}
                   </div>
+                </section>
+              )}
+
+              {(observationList.length > 0 || observationListLoading) && (
+                <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm mb-10">
+                  <h4 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">
+                    <Microscope className="h-4 w-4" />
+                    Parametry Badania ({observationList.length})
+                  </h4>
+                  {observationListLoading ? (
+                    <div className="flex items-center gap-2 py-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600" />
+                      <span className="text-sm text-slate-500">
+                        Pobieranie parametrów...
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="max-h-72 overflow-y-auto scrollbar-hide">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-slate-200">
+                            <th className="text-left py-2 pr-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                              Kod
+                            </th>
+                            <th className="text-left py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                              Nazwa
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {observationList.map((obs) => (
+                            <tr
+                              key={obs.id}
+                              className="border-b border-slate-100 last:border-b-0"
+                            >
+                              <td className="py-2 pr-3 font-mono text-xs text-slate-500 whitespace-nowrap">
+                                {obs.code ?? "—"}
+                              </td>
+                              <td className="py-2 text-slate-700">
+                                {obs.display ?? "—"}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </section>
               )}
             </div>

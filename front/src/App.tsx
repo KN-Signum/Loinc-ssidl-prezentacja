@@ -4,7 +4,7 @@ import { BasketBar } from "./layoutComponents/App/BasketBar";
 import { OrderModal } from "./layoutComponents/App/OrderModal";
 import { DetailsSheet } from "./layoutComponents/App/DetailsSheet";
 import { useGetSpecimenDefinition } from "./features/specimenDefinition/Api";
-import { useGetObservationDefinition } from "./features/observationDefinition/Api";
+import { useGetObservationDefinition, useGetObservationDefinitionList } from "./features/observationDefinition/Api";
 import { useGetActivityDefinitionsByTitle, useGetActivityDefinition } from "./features/activityDefinition/Api";
 import { useGetCitations } from "./features/citations/Api";
 import { useBasketStore } from "./store/basketStore";
@@ -20,6 +20,7 @@ export default function App() {
 
   const specimenQuery = useGetSpecimenDefinition(detailsId);
   const observationQuery = useGetObservationDefinition(detailsId);
+  const observationListQuery = useGetObservationDefinitionList(detailsId);
   const citationsQuery = useGetCitations(detailsId);
   const activityDefinitionQuery = useGetActivityDefinition(detailsId ?? "");
   const isDetailsLoading = specimenQuery.loading || observationQuery.loading || citationsQuery.loading;
@@ -63,6 +64,8 @@ export default function App() {
       <DetailsSheet
         specimenData={specimenQuery.data}
         observationData={observationQuery.data}
+        observationList={observationListQuery.data}
+        observationListLoading={observationListQuery.loading}
         activityDefinitionData={activityDefinitionData}
         citationsData={citationsQuery.data}
         isLoading={isDetailsLoading}

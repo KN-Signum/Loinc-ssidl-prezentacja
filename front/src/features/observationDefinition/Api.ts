@@ -49,3 +49,55 @@ export const useGetObservationDefinition = (
 
   return { data, loading, error };
 };
+
+export interface ObservationDefinitionListItem {
+  id: string;
+  code: string | null;
+  display: string | null;
+}
+
+interface UseObservationDefinitionListResult {
+  data: ObservationDefinitionListItem[];
+  loading: boolean;
+  error: string | null;
+}
+
+export const useGetObservationDefinitionList = (
+  id: string | null,
+): UseObservationDefinitionListResult => {
+  const [data, setData] = useState<ObservationDefinitionListItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!id) {
+      setData([]);
+      return;
+    }
+
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await axios.get(
+          `${API_BASE_URL}/observation-definitions-list/${id}`,
+        );
+        setData(response.data);
+      } catch (err: any) {
+        console.error(err);
+        setError(
+          err.response?.data?.error ||
+            err.message ||
+            "Failed to fetch observation definition list",
+        );
+        setData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [id]);
+
+  return { data, loading, error };
+};

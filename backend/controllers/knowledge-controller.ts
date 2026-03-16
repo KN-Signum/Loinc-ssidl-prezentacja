@@ -85,6 +85,43 @@ export const observationDefinitionByIdController = async (
   }
 };
 
+export const observationDefinitionListController = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const activityDefinition = await fetchFhirResource("ActivityDefinition", `/${id}`);
+    const refs = getObservationDefinitionsFromActivityDefinition(activityDefinition);
+    if (refs.length === 0) {
+      res.status(200).json([]);
+      return;
+    }
+
+    const results = await Promise.all(
+      refs.map(async (ref) => {
+        try {
+          const obsDef = await fetchFhirResource("ObservationDefinition", `/${ref.id}`);
+          const coding = obsDef?.code?.coding?.[0];
+          return {
+            id: obsDef.id,
+            code: coding?.code ?? null,
+            display: coding?.display ?? null,
+          };
+        } catch (error) {
+          console.error(`Error fetching ObservationDefinition ${ref.id}:`, error);
+          return null;
+        }
+      }),
+    );
+
+    res.status(200).json(results.filter(Boolean));
+  } catch (error) {
+    console.error("Error fetching observation definition list:", error);
+    handleFhirError(res, error);
+  }
+};
+
 export const specimenDefinitionByIdController = async (
   req: Request,
   res: Response,
