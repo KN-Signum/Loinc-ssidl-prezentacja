@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 interface AppState {
   detailsId: string | null;
@@ -12,18 +13,38 @@ interface AppState {
 
   isOrderModalOpen: boolean;
   setIsOrderModalOpen: (isOpen: boolean) => void;
+
+  isPreviewMode: boolean;
+  setIsPreviewMode: (isPreview: boolean) => void;
 }
 
-export const useAppStore = create<AppState>((set) => ({
-  detailsId: null,
-  setDetailsId: (id: string | null) => set({ detailsId: id }),
+export const useAppStore = create<AppState>()(
+  persist(
+    (set) => ({
+      detailsId: null,
+      setDetailsId: (id: string | null) => set({ detailsId: id }),
 
-  searchTerm: "",
-  setSearchTerm: (term: string) => set({ searchTerm: term }),
+      searchTerm: "",
+      setSearchTerm: (term: string) => set({ searchTerm: term }),
 
-  knowledgeBase: true,
-  setKnowledgeBase: (value: boolean) => set({ knowledgeBase: value }),
+      knowledgeBase: true,
+      setKnowledgeBase: (value: boolean) => set({ knowledgeBase: value }),
 
-  isOrderModalOpen: false,
-  setIsOrderModalOpen: (isOpen: boolean) => set({ isOrderModalOpen: isOpen }),
-}));
+      isOrderModalOpen: false,
+      setIsOrderModalOpen: (isOpen: boolean) => set({ isOrderModalOpen: isOpen }),
+
+      isPreviewMode: false,
+      setIsPreviewMode: (isPreview: boolean) =>
+        set((state) => ({
+          isPreviewMode: isPreview,
+          knowledgeBase: isPreview ? state.knowledgeBase : true,
+        })),
+    }),
+    {
+      name: "ssidl-access-settings",
+      partialize: (state) => ({
+        isPreviewMode: state.isPreviewMode,
+      }),
+    },
+  ),
+);
