@@ -5,6 +5,7 @@ import { ActivityDefinition } from "../../features/activityDefinition/ActivityDe
 type BaseTableProps = {
   listData: ActivityDefinition[];
   listLoading: boolean;
+  listError?: string | null;
   paginationTokenNext?: string | null;
   paginationTokenPrev?: string | null;
   fetchNextPage?: () => void;
@@ -12,15 +13,13 @@ type BaseTableProps = {
 };
 
 const BaseTable = (props: BaseTableProps) => {
-
-
   return (
     <>
       <BaseSearchbar />
-
       <BaseActivityDefinitionsTable
         listData={props.listData}
         listLoading={props.listLoading}
+        listError={props.listError}
         paginationTokenNext={props.paginationTokenNext}
         paginationTokenPrev={props.paginationTokenPrev}
         onNextPage={props.fetchNextPage}

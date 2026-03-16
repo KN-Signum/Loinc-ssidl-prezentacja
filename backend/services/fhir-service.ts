@@ -8,6 +8,19 @@ const FHIR_BASE_URL = process.env.FHIR_BASE_URL!;
 const CLIENT_ID = process.env.CLIENT_ID!;
 const CLIENT_SECRET = process.env.CLIENT_SECRET!;
 
+const FETCH_TIMEOUT_MS = 15_000;
+
+export class FhirServiceError extends Error {
+  constructor(
+    message: string,
+    public readonly statusCode: number,
+    public readonly cause?: unknown,
+  ) {
+    super(message);
+    this.name = "FhirServiceError";
+  }
+}
+
 interface TokenResponse {
   access_token: string;
   [key: string]: any;
@@ -36,7 +49,57 @@ function buildAuthHeaders(token: TokenResponse): Record<string, string> {
 }
 
 async function fetchJson(url: string, options: RequestInit): Promise<any> {
-  const response = await fetch(url, options);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+  let response: Response;
+  try {
+    response = await fetch(url, { ...options, signal: controller.signal });
+  } catch (err: any) {
+    clearTimeout(timeout);
+    if (err?.name === "AbortError") {
+      throw new FhirServiceError(
+        `Serwer FHIR nie odpowiedział w ciągu ${FETCH_TIMEOUT_MS / 1000} sekund.`,
+        504,
+        err,
+      );
+    }
+    throw new FhirServiceError(
+      "Nie można nawiązać połączenia z serwerem FHIR. Serwer może być niedostępny.",
+      503,
+      err,
+    );
+  }
+  clearTimeout(timeout);
+
+  if (response.status === 401 || response.status === 403) {
+    throw new FhirServiceError(
+      "Błąd uwierzytelnienia — nieprawidłowe dane dostępu do serwera FHIR.",
+      401,
+    );
+  }
+
+  if (!response.ok) {
+    let detail = "";
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const body = await response.json() as any;
+      if (body?.resourceType === "OperationOutcome") {
+        detail =
+          body.issue?.[0]?.diagnostics ||
+          body.issue?.[0]?.details?.text ||
+          "";
+      }
+    } catch {
+    }
+    const fhirStatus = response.status >= 500 ? 503 : response.status;
+    throw new FhirServiceError(
+      detail ||
+        `Serwer FHIR zwrócił błąd ${response.status}: ${response.statusText}.`,
+      fhirStatus,
+    );
+  }
+
   return response.json();
 }
 

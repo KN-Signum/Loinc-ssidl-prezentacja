@@ -26,6 +26,7 @@ export default function App() {
   const {
     data: listData,
     loading: listLoading,
+    error: listError,
     paginationTokenNext,
     paginationTokenPrev,
     fetchNextPage,
@@ -48,6 +49,7 @@ export default function App() {
       <MainContent
         listData={listData || []}
         listLoading={listLoading}
+        listError={listError}
         paginationTokenNext={paginationTokenNext}
         paginationTokenPrev={paginationTokenPrev}
         fetchNextPage={fetchNextPage}
