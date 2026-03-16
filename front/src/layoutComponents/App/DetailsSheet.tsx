@@ -6,8 +6,6 @@ import {
   CheckCircle2,
   Truck,
   BookOpen,
-  ChevronDown,
-  ChevronUp,
 } from "lucide-react";
 import {
   Sheet,
@@ -16,6 +14,12 @@ import {
   SheetTitle,
 } from "../../components/ui/sheet";
 import { Badge } from "../../components/ui/badge";
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from "../../components/ui/accordion";
 import { CitationItem } from "../../features/citations/types";
 import { useAppStore } from "../../store/appStore";
 
@@ -28,8 +32,6 @@ export interface DetailsSheetProps {
 }
 
 const DESCRIPTION_CHAR_LIMIT = 300;
-const HANDLING_INITIAL_LIMIT = 10;
-const CITATIONS_INITIAL_LIMIT = 10;
 
 const genderLabel: Record<string, string> = {
   male: "Mężczyzna",
@@ -50,16 +52,10 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
   const { detailsId, setDetailsId } = useAppStore();
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [genderFilter, setGenderFilter] = useState<GenderFilter>("all");
-  const [isHandlingExpanded, setIsHandlingExpanded] = useState(false);
-  const [isHandlingAllVisible, setIsHandlingAllVisible] = useState(false);
-  const [isCitationsAllVisible, setIsCitationsAllVisible] = useState(false);
 
   useEffect(() => {
     setIsDescriptionExpanded(false);
     setGenderFilter("all");
-    setIsHandlingExpanded(false);
-    setIsHandlingAllVisible(false);
-    setIsCitationsAllVisible(false);
   }, [detailsId]);
 
   const nfzCodes: string[] = (() => {
@@ -68,7 +64,9 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
       .filter((e: any) => e.url?.endsWith("activityDefinition-nfzCode"))
       .map((nfzExt: any) => {
         const subExts: any[] = nfzExt.extension ?? [];
-        return subExts.find((e: any) => e.url === "type")?.valueCoding?.code ?? "";
+        return (
+          subExts.find((e: any) => e.url === "type")?.valueCoding?.code ?? ""
+        );
       })
       .filter(Boolean);
   })();
@@ -83,7 +81,6 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
   const formatRangeValue = (value: number | undefined): number | undefined =>
     value !== undefined ? Math.round(value * 100) / 100 : undefined;
 
-  // Citations logic
   const citationsArray = Array.isArray(citationsData) ? citationsData : null;
   const hasGenderedData = citationsArray?.some((item) => item.gender);
   const availableGenders = citationsArray
@@ -99,58 +96,7 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
       })
     : null;
 
-  const visibleCitations = filteredCitations
-    ? isCitationsAllVisible
-      ? filteredCitations
-      : filteredCitations.slice(0, CITATIONS_INITIAL_LIMIT)
-    : null;
-
-  const hasMoreCitations =
-    filteredCitations && filteredCitations.length > CITATIONS_INITIAL_LIMIT;
-
-  // Handling instructions logic
   const handlingInstructions = specimenData?.handlingInstructions ?? [];
-  const visibleHandling = isHandlingAllVisible
-    ? handlingInstructions
-    : handlingInstructions.slice(0, HANDLING_INITIAL_LIMIT);
-  const hasMoreHandling = handlingInstructions.length > HANDLING_INITIAL_LIMIT;
-
-  const renderRangeOrAge = (
-    data:
-      | {
-          low?: { value?: number; unit?: string };
-          high?: { value?: number; unit?: string };
-        }
-      | null
-      | undefined,
-    label: string,
-  ) => {
-    if (!data) return null;
-
-    const lowValue = formatRangeValue(data.low?.value);
-    const highValue = formatRangeValue(data.high?.value);
-    const unit = data.low?.unit || data.high?.unit || "";
-
-    let displayText = "";
-    if (lowValue !== undefined && highValue !== undefined) {
-      displayText = `${lowValue} – ${highValue} ${unit}`;
-    } else if (lowValue !== undefined) {
-      displayText = `≥ ${lowValue} ${unit}`;
-    } else if (highValue !== undefined) {
-      displayText = `≤ ${highValue} ${unit}`;
-    } else {
-      displayText = "Brak zakresu";
-    }
-
-    return (
-      <Badge
-        variant="outline"
-        className="bg-blue-50 text-blue-700 border-blue-200"
-      >
-        {label}: {displayText}
-      </Badge>
-    );
-  };
 
   const filterButtons: { label: string; value: GenderFilter }[] = [
     { label: "Wszyscy", value: "all" },
@@ -278,25 +224,16 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
 
                     {handlingInstructions.length > 0 && (
                       <div className="pt-2 border-t border-slate-200 mt-2">
-                        <button
-                          onClick={() =>
-                            setIsHandlingExpanded(!isHandlingExpanded)
-                          }
-                          className="flex items-center justify-between w-full text-left"
-                        >
-                          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                            Instrukcje Obsługi ({handlingInstructions.length})
-                          </span>
-                          {isHandlingExpanded ? (
-                            <ChevronUp className="h-4 w-4 text-slate-400" />
-                          ) : (
-                            <ChevronDown className="h-4 w-4 text-slate-400" />
-                          )}
-                        </button>
-
-                        {isHandlingExpanded && (
-                          <div className="mt-3 flex flex-col gap-3">
-                            {visibleHandling.map(
+                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-2">
+                          Instrukcje Obsługi ({handlingInstructions.length})
+                        </span>
+                        <div className="max-h-64 overflow-y-auto scrollbar-hide">
+                          <Accordion
+                            type="single"
+                            collapsible
+                            className="w-full"
+                          >
+                            {handlingInstructions.map(
                               (
                                 item: {
                                   displayName: string;
@@ -305,43 +242,35 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
                                 },
                                 idx: number,
                               ) => (
-                                <div
+                                <AccordionItem
                                   key={idx}
-                                  className="p-4 rounded-lg border border-slate-300 bg-white"
+                                  value={`handling-${idx}`}
+                                  className="border-b border-slate-200"
                                 >
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <Truck className="h-4 w-4 text-blue-600 shrink-0" />
-                                    <span className="text-sm font-semibold text-slate-900">
-                                      {item.displayName}
-                                    </span>
-                                    <Badge
-                                      variant="outline"
-                                      className="text-xs font-mono"
-                                    >
-                                      {item.code}
-                                    </Badge>
-                                  </div>
-                                  <p className="text-sm text-slate-700 leading-relaxed pl-6">
-                                    {item.instruction}
-                                  </p>
-                                </div>
+                                  <AccordionTrigger className="py-3 hover:no-underline">
+                                    <div className="flex items-center gap-2">
+                                      <Truck className="h-4 w-4 text-blue-600 shrink-0" />
+                                      <span className="text-sm font-semibold text-slate-900">
+                                        {item.displayName}
+                                      </span>
+                                      <Badge
+                                        variant="outline"
+                                        className="text-xs font-mono"
+                                      >
+                                        {item.code}
+                                      </Badge>
+                                    </div>
+                                  </AccordionTrigger>
+                                  <AccordionContent>
+                                    <p className="text-sm text-slate-700 leading-relaxed pl-6">
+                                      {item.instruction}
+                                    </p>
+                                  </AccordionContent>
+                                </AccordionItem>
                               ),
                             )}
-
-                            {hasMoreHandling && (
-                              <button
-                                onClick={() =>
-                                  setIsHandlingAllVisible(!isHandlingAllVisible)
-                                }
-                                className="w-full py-2 text-sm text-blue-600 hover:text-blue-800 font-medium border border-dashed border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
-                              >
-                                {isHandlingAllVisible
-                                  ? "Pokaż mniej"
-                                  : `Wyświetl wszystkie (${handlingInstructions.length})`}
-                              </button>
-                            )}
-                          </div>
-                        )}
+                          </Accordion>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -369,7 +298,6 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
                               key={btn.value}
                               onClick={() => {
                                 setGenderFilter(btn.value);
-                                setIsCitationsAllVisible(false);
                               }}
                               className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
                                 genderFilter === btn.value
@@ -385,92 +313,156 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
                   </div>
 
                   <div className="flex flex-col gap-3">
-                    {visibleCitations ? (
-                      visibleCitations.length === 0 ? (
+                    {filteredCitations ? (
+                      filteredCitations.length === 0 ? (
                         <p className="text-sm text-slate-500 italic">
                           Brak danych dla wybranego filtru.
                         </p>
                       ) : (
-                        <>
-                          {visibleCitations.map((item, idx) => (
-                            <div
-                              key={idx}
-                              className="border border-slate-200 rounded-lg p-4 bg-slate-50/30"
-                            >
-                              {item.message ? (
-                                <p className="text-sm text-slate-500 italic">
-                                  {item.message}
-                                </p>
-                              ) : (
-                                <div className="space-y-3">
-                                  {(item.range || item.age || item.gender) && (
-                                    <div className="flex flex-wrap gap-2 mb-2">
-                                      {renderRangeOrAge(item.range, "Zakres")}
-                                      {renderRangeOrAge(item.age, "Wiek")}
+                        <div className="max-h-80 overflow-y-auto scrollbar-hide">
+                          <Accordion
+                            type="single"
+                            collapsible
+                            className="w-full"
+                          >
+                            {filteredCitations.map((item, idx) => {
+                              if (item.message) {
+                                return (
+                                  <p
+                                    key={idx}
+                                    className="text-sm text-slate-500 italic py-2"
+                                  >
+                                    {item.message}
+                                  </p>
+                                );
+                              }
+
+                              const lowVal = formatRangeValue(
+                                item.range?.low?.value,
+                              );
+                              const highVal = formatRangeValue(
+                                item.range?.high?.value,
+                              );
+                              const unit =
+                                item.range?.low?.unit ||
+                                item.range?.high?.unit ||
+                                "";
+                              let rangeSummary = "";
+                              if (
+                                lowVal !== undefined &&
+                                highVal !== undefined
+                              ) {
+                                rangeSummary = `${lowVal}–${highVal} ${unit}`;
+                              } else if (lowVal !== undefined) {
+                                rangeSummary = `≥ ${lowVal} ${unit}`;
+                              } else if (highVal !== undefined) {
+                                rangeSummary = `≤ ${highVal} ${unit}`;
+                              }
+
+                              const ageLow = formatRangeValue(
+                                item.age?.low?.value,
+                              );
+                              const ageHigh = formatRangeValue(
+                                item.age?.high?.value,
+                              );
+                              const ageUnit =
+                                item.age?.low?.unit ||
+                                item.age?.high?.unit ||
+                                "";
+                              let ageSummary = "";
+                              if (
+                                ageLow !== undefined &&
+                                ageHigh !== undefined
+                              ) {
+                                ageSummary = `${ageLow}–${ageHigh} ${ageUnit}`;
+                              } else if (ageLow !== undefined) {
+                                ageSummary = `≥ ${ageLow} ${ageUnit}`;
+                              } else if (ageHigh !== undefined) {
+                                ageSummary = `≤ ${ageHigh} ${ageUnit}`;
+                              }
+
+                              return (
+                                <AccordionItem
+                                  key={idx}
+                                  value={`citation-${idx}`}
+                                  className="border-b border-slate-200"
+                                >
+                                  <AccordionTrigger className="py-3 hover:no-underline">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      {rangeSummary && (
+                                        <Badge
+                                          variant="outline"
+                                          className="bg-blue-50 text-blue-700 border-blue-200 text-xs"
+                                        >
+                                          {rangeSummary}
+                                        </Badge>
+                                      )}
+                                      {ageSummary && (
+                                        <Badge
+                                          variant="outline"
+                                          className="bg-blue-50 text-blue-700 border-blue-200 text-xs"
+                                        >
+                                          Wiek: {ageSummary}
+                                        </Badge>
+                                      )}
                                       {item.gender && (
                                         <Badge
                                           variant="outline"
-                                          className="bg-blue-50 text-blue-700 border-blue-200"
+                                          className="bg-blue-50 text-blue-700 border-blue-200 text-xs"
                                         >
-                                          Płeć:{" "}
                                           {genderLabel[item.gender] ??
                                             item.gender}
                                         </Badge>
                                       )}
+                                      {!rangeSummary &&
+                                        !ageSummary &&
+                                        !item.gender && (
+                                          <span className="text-sm text-slate-600">
+                                            Wartość referencyjna #{idx + 1}
+                                          </span>
+                                        )}
                                     </div>
-                                  )}
-                                  {(item.range || item.age || item.gender) && (
-                                    <hr className="border-slate-200 my-2" />
-                                  )}
-                                  {item.citation?.description && (
-                                    <p className="text-sm text-slate-700 leading-relaxed">
-                                      {item.citation.description}
-                                    </p>
-                                  )}
-                                  <div className="pt-2">
-                                    {item.citation?.citedArtifact
-                                      ?.webLocation?.[0]?.url ? (
-                                      <a
-                                        href={
-                                          item.citation.citedArtifact
-                                            .webLocation[0].url
-                                        }
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 hover:underline"
-                                      >
-                                        <BookOpen className="h-4 w-4 shrink-0" />
-                                        <span className="break-all">
-                                          {
-                                            item.citation.citedArtifact
-                                              .webLocation[0].url
-                                          }
-                                        </span>
-                                      </a>
-                                    ) : (
-                                      <p className="text-sm text-slate-400 italic">
-                                        Brak źródła
-                                      </p>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-
-                          {hasMoreCitations && (
-                            <button
-                              onClick={() =>
-                                setIsCitationsAllVisible(!isCitationsAllVisible)
-                              }
-                              className="w-full py-2 text-sm text-blue-600 hover:text-blue-800 font-medium border border-dashed border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
-                            >
-                              {isCitationsAllVisible
-                                ? "Pokaż mniej"
-                                : `Wyświetl wszystkie (${filteredCitations!.length})`}
-                            </button>
-                          )}
-                        </>
+                                  </AccordionTrigger>
+                                  <AccordionContent>
+                                    <div className="space-y-3 pl-1">
+                                      {item.citation?.description && (
+                                        <p className="text-sm text-slate-700 leading-relaxed">
+                                          {item.citation.description}
+                                        </p>
+                                      )}
+                                      <div className="pt-1">
+                                        {item.citation?.citedArtifact
+                                          ?.webLocation?.[0]?.url ? (
+                                          <a
+                                            href={
+                                              item.citation.citedArtifact
+                                                .webLocation[0].url
+                                            }
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                                          >
+                                            <BookOpen className="h-4 w-4 shrink-0" />
+                                            <span className="break-all">
+                                              {
+                                                item.citation.citedArtifact
+                                                  .webLocation[0].url
+                                              }
+                                            </span>
+                                          </a>
+                                        ) : (
+                                          <p className="text-sm text-slate-400 italic">
+                                            Brak źródła
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </AccordionContent>
+                                </AccordionItem>
+                              );
+                            })}
+                          </Accordion>
+                        </div>
                       )
                     ) : (
                       <p className="text-sm text-slate-500 italic">
