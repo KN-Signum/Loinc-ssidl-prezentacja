@@ -6,6 +6,7 @@ import {
   conditionDefinitionByIdController,
   locationController,
   observationDefinitionByIdController,
+  observationDefinitionListController,
   specimenDefinitionByIdController,
   ageUnitsController,
 } from "../controllers/knowledge-controller.js";
@@ -18,6 +19,8 @@ router.get("/activity-definitions", activityDefinitionByTitleController);
 router.get("/activity-definitions/:id", activityDefinitionByIdController);
 
 router.get("/observation-definitions/:id", observationDefinitionByIdController);
+
+router.get("/observation-definitions-list/:id", observationDefinitionListController);
 
 router.get("/specimen-definitions/:id", specimenDefinitionByIdController);
 

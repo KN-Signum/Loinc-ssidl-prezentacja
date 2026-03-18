@@ -4,8 +4,8 @@ import { BasketBar } from "./layoutComponents/App/BasketBar";
 import { OrderModal } from "./layoutComponents/App/OrderModal";
 import { DetailsSheet } from "./layoutComponents/App/DetailsSheet";
 import { useGetSpecimenDefinition } from "./features/specimenDefinition/Api";
-import { useGetObservationDefinition } from "./features/observationDefinition/Api";
-import { useGetActivityDefinitionsByTitle } from "./features/activityDefinition/Api";
+import { useGetObservationDefinition, useGetObservationDefinitionList } from "./features/observationDefinition/Api";
+import { useGetActivityDefinitionsByTitle, useGetActivityDefinition } from "./features/activityDefinition/Api";
 import { useGetCitations } from "./features/citations/Api";
 import { useBasketStore } from "./store/basketStore";
 import { useAppStore } from "./store/appStore";
@@ -20,7 +20,9 @@ export default function App() {
 
   const specimenQuery = useGetSpecimenDefinition(detailsId);
   const observationQuery = useGetObservationDefinition(detailsId);
+  const observationListQuery = useGetObservationDefinitionList(detailsId);
   const citationsQuery = useGetCitations(detailsId);
+  const activityDefinitionQuery = useGetActivityDefinition(detailsId ?? "");
   const isDetailsLoading = specimenQuery.loading || observationQuery.loading || citationsQuery.loading;
 
   const {
@@ -38,9 +40,7 @@ export default function App() {
   const basketItems = getBasketItems(listData || []);
   const basketGroups = getBasketGroups(listData || []);
 
-  const activityDefinitionData = detailsId
-    ? listData?.find((item) => item.id === detailsId)
-    : null;
+  const activityDefinitionData = activityDefinitionQuery.data;
 
   return (
     <div className="min-h-screen bg-slate-50/50 font-sans text-slate-900 pb-32">
@@ -64,6 +64,8 @@ export default function App() {
       <DetailsSheet
         specimenData={specimenQuery.data}
         observationData={observationQuery.data}
+        observationList={observationListQuery.data}
+        observationListLoading={observationListQuery.loading}
         activityDefinitionData={activityDefinitionData}
         citationsData={citationsQuery.data}
         isLoading={isDetailsLoading}
