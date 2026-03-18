@@ -148,7 +148,11 @@ async function fetchResourceType(resourceType, headers) {
   const typeDir = path.join(OUTPUT_DIR, resourceType);
   ensureDir(typeDir);
 
-  const firstUrl = `${FHIR_BASE_URL}/${resourceType}?_count=${PAGE_SIZE}`;
+  // Fetch all resources of this type.
+  // We use _sort=_id to ensure stable pagination and (usually) numeric order.
+  // If you want to restrict to a specific range (e.g. 1..1000), you could append:
+  // &id=ge1&id=le1000 (if server supports it)
+  const firstUrl = `${FHIR_BASE_URL}/${resourceType}?_count=${PAGE_SIZE}&_sort=_id`;
 
   let total      = null;
   let saved      = 0;
