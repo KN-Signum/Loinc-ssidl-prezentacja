@@ -13,7 +13,11 @@ interface UseTableFilteringResult {
   selectedSpecimen: string;
   setSelectedSpecimen: (specimen: string) => void;
   filteredData: ActivityDefinition[];
-  getLoincOrICDCode: (item: ActivityDefinition) => {loinc:string,icd_9:string};
+  getLoincOrICDCode: (item: ActivityDefinition) => {
+    loinc: string;
+    icd_9: string;
+    icd_9_display: string | null;
+  };
 }
 
 const LOINC_SYSTEM = "http://loinc.org";
@@ -28,13 +32,30 @@ export const useTableFiltering = ({
   const [selectedSpecimen, setSelectedSpecimen] = useState<string>("all");
 
   // Memoized code extraction function
-  const getLoincOrICDCode = useCallback((item: ActivityDefinition): {loinc:string,icd_9:string} => {
+  const getLoincOrICDCode = useCallback((item: ActivityDefinition): {
+    loinc: string;
+    icd_9: string;
+    icd_9_display: string | null;
+  } => {
     const codingArray: Coding[] = item.code?.coding || [];
-    const loinc = codingArray[0]?.code || DEFAULT_CODE
-    const icd_9 = codingArray[1]?.code || DEFAULT_CODE
+
+    const loincCoding =
+      codingArray.find((coding) => coding.system === LOINC_SYSTEM) ||
+      codingArray[0];
+
+    const icd9Coding =
+      codingArray.find((coding) => coding.system === ICD9_SYSTEM) ||
+      codingArray.find((coding) => coding.system !== LOINC_SYSTEM) ||
+      codingArray[1];
+
+    const loinc = loincCoding?.code || DEFAULT_CODE;
+    const icd_9 = icd9Coding?.code || DEFAULT_CODE;
+    const icd_9_display = icd9Coding?.display || null;
+
     return {
       loinc,
-      icd_9
+      icd_9,
+      icd_9_display,
     };
   }, []);
 

@@ -7,6 +7,7 @@ import { useAppStore } from "../../store/appStore";
 export interface MainContentProps {
   listData: ActivityDefinition[];
   listLoading: boolean;
+  listError?: string | null;
   paginationTokenNext?: string | null;
   paginationTokenPrev?: string | null;
   fetchNextPage?: () => void;
@@ -16,19 +17,22 @@ export interface MainContentProps {
 export const MainContent: React.FC<MainContentProps> = ({
   listData,
   listLoading,
+  listError,
   paginationTokenNext,
   paginationTokenPrev,
   fetchNextPage,
   fetchPrevPage,
 }) => {
-  const { knowledgeBase } = useAppStore();
+  const { knowledgeBase, isPreviewMode } = useAppStore();
+  const showKnowledgeBase = !isPreviewMode || knowledgeBase;
 
   return (
     <main className="mx-auto max-w-7xl p-6">
-      {knowledgeBase ? (
+      {showKnowledgeBase ? (
         <BaseTable
           listData={listData}
           listLoading={listLoading}
+          listError={listError}
           paginationTokenNext={paginationTokenNext}
           paginationTokenPrev={paginationTokenPrev}
           fetchNextPage={fetchNextPage}
@@ -38,6 +42,7 @@ export const MainContent: React.FC<MainContentProps> = ({
         <CatalogTable
           listData={listData}
           listLoading={listLoading}
+          listError={listError}
         />
       )}
     </main>

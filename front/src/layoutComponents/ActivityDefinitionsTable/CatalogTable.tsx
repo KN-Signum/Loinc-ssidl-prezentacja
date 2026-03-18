@@ -5,16 +5,17 @@ import { ActivityDefinition } from "../../features/activityDefinition/ActivityDe
 type CatalogTableProps = {
   listData: ActivityDefinition[];
   listLoading: boolean;
+  listError?: string | null;
 };
 
 const CatalogTable = (props: CatalogTableProps) => {
-
   return (
     <>
       <Searchbar />
       <ActivityDefinitionsTable
         listData={props.listData}
         listLoading={props.listLoading}
+        listError={props.listError}
       />
     </>
   );

@@ -6,6 +6,9 @@ import {
   CheckCircle2,
   Truck,
   BookOpen,
+  Microscope,
+  Calendar,
+  UserCircle,
 } from "lucide-react";
 import {
   Sheet,
@@ -14,12 +17,21 @@ import {
   SheetTitle,
 } from "../../components/ui/sheet";
 import { Badge } from "../../components/ui/badge";
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from "../../components/ui/accordion";
 import { CitationItem } from "../../features/citations/types";
+import { ObservationDefinitionListItem } from "../../features/observationDefinition/Api";
 import { useAppStore } from "../../store/appStore";
 
 export interface DetailsSheetProps {
   specimenData: any;
   observationData: any;
+  observationList: ObservationDefinitionListItem[];
+  observationListLoading: boolean;
   activityDefinitionData: any;
   citationsData: CitationItem[] | { message: string } | null;
   isLoading: boolean;
@@ -27,19 +39,46 @@ export interface DetailsSheetProps {
 
 const DESCRIPTION_CHAR_LIMIT = 300;
 
+const genderLabel: Record<string, string> = {
+  male: "Mężczyzna",
+  female: "Kobieta",
+  other: "Inne",
+  unknown: "Nieznana",
+};
+
+type GenderFilter = "all" | "male" | "female";
+
 export const DetailsSheet: React.FC<DetailsSheetProps> = ({
   specimenData,
   observationData,
+  observationList,
+  observationListLoading,
   activityDefinitionData,
   citationsData,
   isLoading,
 }) => {
   const { detailsId, setDetailsId } = useAppStore();
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  const [genderFilter, setGenderFilter] = useState<GenderFilter>("all");
 
   useEffect(() => {
     setIsDescriptionExpanded(false);
+    setGenderFilter("all");
   }, [detailsId]);
+
+  const nfzCodes: { code: string; display: string }[] = (() => {
+    const extensions: any[] = activityDefinitionData?.extension ?? [];
+    return extensions
+      .filter((e: any) => e.url?.endsWith("activityDefinition-nfzCode"))
+      .map((nfzExt: any) => {
+        const subExts: any[] = nfzExt.extension ?? [];
+        const coding = subExts.find((e: any) => e.url === "type")?.valueCoding;
+        return coding?.code
+          ? { code: coding.code, display: coding.display ?? coding.code }
+          : null;
+      })
+      .filter(Boolean);
+  })();
 
   const description = activityDefinitionData?.description || "";
   const isDescriptionLong = description.length > DESCRIPTION_CHAR_LIMIT;
@@ -48,52 +87,41 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
       ? description.slice(0, DESCRIPTION_CHAR_LIMIT) + "..."
       : description;
 
-  const formatRangeValue = (value: number | undefined): number | undefined => {
-    return value !== undefined ? Math.round(value * 100) / 100 : undefined;
-  };
+  const formatRangeValue = (value: number | undefined): number | undefined =>
+    value !== undefined ? Math.round(value * 100) / 100 : undefined;
 
-  const renderRangeOrAge = (
-    data: {
-      low?: { value?: number; unit?: string };
-      high?: { value?: number; unit?: string };
-    } | null | undefined,
-    label: string,
-  ) => {
-    if (!data) return null;
+  const citationsArray = Array.isArray(citationsData) ? citationsData : null;
+  const hasGenderedData = citationsArray?.some((item) => item.gender);
+  const availableGenders = citationsArray
+    ? [...new Set(citationsArray.map((item) => item.gender).filter(Boolean))]
+    : [];
+  const showGenderFilter = hasGenderedData && availableGenders.length > 1;
 
-    const lowValue = formatRangeValue(data.low?.value);
-    const highValue = formatRangeValue(data.high?.value);
-    const unit = data.low?.unit || data.high?.unit || "";
+  const filteredCitations = citationsArray
+    ? citationsArray.filter((item) => {
+        if (genderFilter === "all") return true;
+        if (!item.gender) return true;
+        return item.gender === genderFilter;
+      })
+    : null;
 
-    let displayText = "";
-    if (lowValue !== undefined && highValue !== undefined) {
-      displayText = `${lowValue} - ${highValue} ${unit}`;
-    } else if (lowValue !== undefined) {
-      displayText = `≥ ${lowValue} ${unit}`;
-    } else if (highValue !== undefined) {
-      displayText = `≤ ${highValue} ${unit}`;
-    } else {
-      displayText = "Brak zakresu";
-    }
+  const handlingInstructions = specimenData?.handlingInstructions ?? [];
 
-    return (
-      <div className="flex items-center gap-2 mb-2">
-        <Badge
-          variant="outline"
-          className="bg-blue-50 text-blue-700 border-blue-200"
-        >
-          {label}: {displayText}
-        </Badge>
-      </div>
-    );
-  };
+  const filterButtons: { label: string; value: GenderFilter }[] = [
+    { label: "Wszyscy", value: "all" },
+    { label: "Mężczyzna", value: "male" },
+    { label: "Kobieta", value: "female" },
+  ];
 
   return (
-    <Sheet open={!!detailsId} onOpenChange={(open: boolean) => !open && setDetailsId(null)}>
+    <Sheet
+      open={!!detailsId}
+      onOpenChange={(open: boolean) => !open && setDetailsId(null)}
+    >
       <SheetContent className="w-full mx-4 sm:max-w-xl overflow-y-auto">
         {isLoading ? (
           <div className="flex h-full items-center justify-center flex-col gap-4">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
             <p className="text-sm text-slate-500">
               Pobieranie definicji FHIR...
             </p>
@@ -104,13 +132,24 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
               <SheetTitle className="text-2xl leading-tight">
                 {observationData?.preferredReportName || "Szczegóły Badania"}
               </SheetTitle>
-              <Badge
-                variant="outline"
-                className="w-fit mb-2 text-blue-700 border-blue-200 bg-blue-50 font-mono"
-              >
-                LOINC:{" "}
-                {activityDefinitionData?.code?.coding?.[0]?.code || "N/A"}
-              </Badge>
+              <div className="flex flex-wrap gap-2 mb-2">
+                <Badge
+                  variant="outline"
+                  className="w-fit text-blue-700 border-blue-200 bg-blue-50 font-mono"
+                >
+                  LOINC:{" "}
+                  {activityDefinitionData?.code?.coding?.[0]?.code || "N/A"}
+                </Badge>
+                {nfzCodes.map((nfz, idx) => (
+                  <Badge
+                    key={idx}
+                    variant="outline"
+                    className="w-fit text-emerald-700 border-emerald-200 bg-emerald-50"
+                  >
+                    {nfz.display}: {nfz.code}
+                  </Badge>
+                ))}
+              </div>
             </SheetHeader>
 
             <div className="space-y-8">
@@ -135,6 +174,7 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
                 </section>
               )}
 
+              {/* Przygotowanie Pacjenta */}
               {specimenData && (
                 <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
                   <h4 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">
@@ -179,29 +219,30 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
                         <span className="block text-xs font-semibold text-slate-500">
                           Typ Materiału
                         </span>
-
-                        <div className="flex items-center gap-2 text-center text-sm font-medium  text-slate-900">
+                        <div className="flex items-center gap-2 text-sm font-medium text-slate-900">
                           <p className="uppercase">
-                            {specimenData.collectionSystem?.toLowerCase()}
+                            {specimenData.display?.toLowerCase()}
                           </p>
-                          <Badge
-                            variant="outline"
-                            className="w-fit text-blue-700 border-blue-200 bg-blue-50 font-mono"
-                          >
+                          <p className="text-slate-300">|</p>
+                          <p className="text-slate-500">
                             KOD: {specimenData?.collectionCode || "N/A"}
-                          </Badge>
+                          </p>
                         </div>
                       </div>
                     </div>
 
-                    {specimenData.handlingInstructions &&
-                      specimenData.handlingInstructions.length > 0 && (
-                        <div className="pt-2 border-t border-slate-200 mt-2">
-                          <span className="block text-xs font-semibold text-slate-500 mb-3">
-                            Instrukcje Obsługi
-                          </span>
-                          <div className="space-y-3">
-                            {specimenData.handlingInstructions.map(
+                    {handlingInstructions.length > 0 && (
+                      <div className="pt-2 border-t border-slate-200 mt-2">
+                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-2">
+                          Instrukcje Obsługi ({handlingInstructions.length})
+                        </span>
+                        <div className="max-h-64 overflow-y-auto scrollbar-hide">
+                          <Accordion
+                            type="single"
+                            collapsible
+                            className="w-full"
+                          >
+                            {handlingInstructions.map(
                               (
                                 item: {
                                   displayName: string;
@@ -210,90 +251,281 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
                                 },
                                 idx: number,
                               ) => (
-                                <div
+                                <AccordionItem
                                   key={idx}
-                                  className="p-4 rounded-lg border border-slate-300 mb-2"
+                                  value={`handling-${idx}`}
+                                  className="border-b border-slate-200"
                                 >
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <Truck className="h-4 w-4 text-blue-600 shrink-0" />
-                                    <span className="text-sm font-semibold text-slate-900">
-                                      {item.displayName}
-                                    </span>
-                                    <Badge
-                                      variant="outline"
-                                      className="text-xs font-mono"
-                                    >
-                                      {item.code}
-                                    </Badge>
-                                  </div>
-                                  <p className="text-sm text-slate-700 leading-relaxed pl-6">
-                                    {item.instruction}
-                                  </p>
-                                </div>
+                                  <AccordionTrigger className="py-3 hover:no-underline">
+                                    <div className="flex items-center gap-2">
+                                      <Truck className="h-4 w-4 text-blue-600 shrink-0" />
+                                      <span className="text-sm font-semibold text-slate-900">
+                                        {item.displayName}
+                                      </span>
+                                      <Badge
+                                        variant="outline"
+                                        className="text-xs font-mono"
+                                      >
+                                        {item.code}
+                                      </Badge>
+                                    </div>
+                                  </AccordionTrigger>
+                                  <AccordionContent>
+                                    <p className="text-sm text-slate-700 leading-relaxed pl-6">
+                                      {item.instruction}
+                                    </p>
+                                  </AccordionContent>
+                                </AccordionItem>
                               ),
                             )}
-                          </div>
+                          </Accordion>
                         </div>
-                      )}
+                      </div>
+                    )}
                   </div>
                 </section>
               )}
 
               {citationsData && (
                 <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-                  <h4 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">
-                    <BookOpen className="h-4 w-4" />
-                    Wartości Referencyjne
-                  </h4>
-                  <div className="space-y-4">
-                    {Array.isArray(citationsData) ? (
-                      citationsData.map((item, idx) => (
-                        <div
-                          key={idx}
-                          className="border border-slate-200 rounded-lg p-4 last:mb-0 bg-slate-50/30"
-                        >
-                          {item.message ? (
-                            <p className="text-sm text-slate-500 italic">
-                              {item.message}
-                            </p>
-                          ) : (
-                            <div className="space-y-3">
-                              <div className="flex flex-wrap gap-2">
-                                {renderRangeOrAge(item.range, "Zakres")}
-                                {renderRangeOrAge(item.age, "Wiek")}
-                              </div>
-                              {item.citation?.description && (
-                                <div className="pt-2 border-t border-slate-200">
-                                  <p className="text-sm text-slate-700 leading-relaxed">
-                                    {item.citation.description}
-                                  </p>
-                                </div>
-                              )}
-                              {item.citation?.url && (
-                                <div className="pt-2">
-                                  <a
-                                    href={item.citation?.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 hover:underline break-all"
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-500">
+                      <BookOpen className="h-4 w-4" />
+                      Wartości Referencyjne
+                    </h4>
+
+                    {showGenderFilter && (
+                      <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+                        {filterButtons
+                          .filter(
+                            (btn) =>
+                              btn.value === "all" ||
+                              availableGenders.includes(btn.value),
+                          )
+                          .map((btn) => (
+                            <button
+                              key={btn.value}
+                              onClick={() => {
+                                setGenderFilter(btn.value);
+                              }}
+                              className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                                genderFilter === btn.value
+                                  ? "bg-white text-slate-900 shadow-sm"
+                                  : "text-slate-500 hover:text-slate-700"
+                              }`}
+                            >
+                              {btn.label}
+                            </button>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col gap-3">
+                    {filteredCitations ? (
+                      filteredCitations.length === 0 ? (
+                        <p className="text-sm text-slate-500 italic">
+                          Brak danych dla wybranego filtru.
+                        </p>
+                      ) : (
+                        <div className="max-h-80 overflow-y-auto scrollbar-hide">
+                          <Accordion
+                            type="single"
+                            collapsible
+                            className="w-full"
+                          >
+                            {filteredCitations.map((item, idx) => {
+                              if (item.message) {
+                                return (
+                                  <p
+                                    key={idx}
+                                    className="text-sm text-slate-500 italic py-2"
                                   >
-                                    <BookOpen className="h-4 w-4 shrink-0" />
-                                    <span className="break-all">
-                                      {item.citation?.url}
-                                    </span>
-                                  </a>
-                                </div>
-                              )}
-                            </div>
-                          )}
+                                    {item.message}
+                                  </p>
+                                );
+                              }
+
+                              const lowVal = formatRangeValue(
+                                item.range?.low?.value,
+                              );
+                              const highVal = formatRangeValue(
+                                item.range?.high?.value,
+                              );
+                              const unit =
+                                item.range?.low?.unit ||
+                                item.range?.high?.unit ||
+                                "";
+                              let rangeSummary = "";
+                              if (
+                                lowVal !== undefined &&
+                                highVal !== undefined
+                              ) {
+                                rangeSummary = `${lowVal}–${highVal} ${unit}`;
+                              } else if (lowVal !== undefined) {
+                                rangeSummary = `≥ ${lowVal} ${unit}`;
+                              } else if (highVal !== undefined) {
+                                rangeSummary = `≤ ${highVal} ${unit}`;
+                              }
+
+                              const ageLow = formatRangeValue(
+                                item.age?.low?.value,
+                              );
+                              const ageHigh = formatRangeValue(
+                                item.age?.high?.value,
+                              );
+                              const ageUnit =
+                                item.age?.low?.unit ||
+                                item.age?.high?.unit ||
+                                "";
+                              let ageSummary = "";
+                              if (
+                                ageLow !== undefined &&
+                                ageHigh !== undefined
+                              ) {
+                                ageSummary = `${ageLow}–${ageHigh} ${ageUnit}`;
+                              } else if (ageLow !== undefined) {
+                                ageSummary = `≥ ${ageLow} ${ageUnit}`;
+                              } else if (ageHigh !== undefined) {
+                                ageSummary = `≤ ${ageHigh} ${ageUnit}`;
+                              }
+
+                              return (
+                                <AccordionItem
+                                  key={idx}
+                                  value={`citation-${idx}`}
+                                  className="border-b border-slate-200"
+                                >
+                                  <AccordionTrigger className="py-3 hover:no-underline">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      {rangeSummary && (
+                                        <Badge
+                                          variant="outline"
+                                          className="bg-blue-50 text-blue-700 border-blue-200 text-xs"
+                                        >
+                                          {rangeSummary}
+                                        </Badge>
+                                      )}
+                                      {ageSummary && (
+                                        <Badge
+                                          variant="outline"
+                                          className="bg-blue-50 text-blue-700 border-blue-200 text-xs"
+                                        >
+                                          Wiek: {ageSummary}
+                                        </Badge>
+                                      )}
+                                      {item.gender && (
+                                        <Badge
+                                          variant="outline"
+                                          className="bg-blue-50 text-blue-700 border-blue-200 text-xs"
+                                        >
+                                          {genderLabel[item.gender] ??
+                                            item.gender}
+                                        </Badge>
+                                      )}
+                                      {!rangeSummary &&
+                                        !ageSummary &&
+                                        !item.gender && (
+                                          <span className="text-sm text-slate-600">
+                                            Wartość referencyjna #{idx + 1}
+                                          </span>
+                                        )}
+                                    </div>
+                                  </AccordionTrigger>
+                                  <AccordionContent>
+                                    <div className="space-y-3 pl-1">
+                                      {item.citation?.description && (
+                                        <p className="text-sm text-slate-700 leading-relaxed">
+                                          {item.citation.description}
+                                        </p>
+                                      )}
+                                      <div className="pt-1">
+                                        {item.citation?.citedArtifact
+                                          ?.webLocation?.[0]?.url ? (
+                                          <a
+                                            href={
+                                              item.citation.citedArtifact
+                                                .webLocation[0].url
+                                            }
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                                          >
+                                            <BookOpen className="h-4 w-4 shrink-0" />
+                                            <span className="break-all">
+                                              {
+                                                item.citation.citedArtifact
+                                                  .webLocation[0].url
+                                              }
+                                            </span>
+                                          </a>
+                                        ) : (
+                                          <p className="text-sm text-slate-400 italic">
+                                            Brak źródła
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </AccordionContent>
+                                </AccordionItem>
+                              );
+                            })}
+                          </Accordion>
                         </div>
-                      ))
+                      )
                     ) : (
                       <p className="text-sm text-slate-500 italic">
-                        {citationsData.message}
+                        {(citationsData as { message: string }).message}
                       </p>
                     )}
                   </div>
+                </section>
+              )}
+
+              {(observationList.length > 0 || observationListLoading) && (
+                <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm mb-10">
+                  <h4 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">
+                    <Microscope className="h-4 w-4" />
+                    Parametry Badania ({observationList.length})
+                  </h4>
+                  {observationListLoading ? (
+                    <div className="flex items-center gap-2 py-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600" />
+                      <span className="text-sm text-slate-500">
+                        Pobieranie parametrów...
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="max-h-72 overflow-y-auto scrollbar-hide">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-slate-200">
+                            <th className="text-left py-2 pr-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                              Kod
+                            </th>
+                            <th className="text-left py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                              Nazwa
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {observationList.map((obs) => (
+                            <tr
+                              key={obs.id}
+                              className="border-b border-slate-100 last:border-b-0"
+                            >
+                              <td className="py-2 pr-3 font-mono text-xs text-slate-500 whitespace-nowrap">
+                                {obs.code ?? "—"}
+                              </td>
+                              <td className="py-2 text-slate-700">
+                                {obs.display ?? "—"}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </section>
               )}
             </div>

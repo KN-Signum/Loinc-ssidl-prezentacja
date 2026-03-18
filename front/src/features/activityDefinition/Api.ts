@@ -4,6 +4,17 @@ import { ActivityDefinition } from "./ActivityDefinition";
 
 const API_BASE_URL = "http://localhost:5001/knowledge";
 
+function classifyAxiosError(err: any): string {
+  if (!err.response) {
+    return "Nie można połączyć się z serwerem aplikacji. Sprawdź, czy backend działa (ECONNREFUSED).";
+  }
+  return (
+    err.response?.data?.error ||
+    err.message ||
+    "Nieznany błąd serwera."
+  );
+}
+
 interface UseActivityDefinitionResult {
   data: ActivityDefinition | null;
   loading: boolean;
@@ -42,11 +53,7 @@ export const useGetActivityDefinition = (
         );
         setData(new ActivityDefinition(response.data));
       } catch (err: any) {
-        setError(
-          err.response?.data?.error ||
-            err.message ||
-            "Failed to fetch activity definition",
-        );
+        setError(classifyAxiosError(err));
         setData(null);
       } finally {
         setLoading(false);
@@ -88,11 +95,7 @@ export const useGetActivityDefinitionsByTitle = (
       setPaginationTokenPrev(response.data.paginationTokenPrev || null);
       setData(entries);
     } catch (err: any) {
-      setError(
-        err.response?.data?.error ||
-          err.message ||
-          "Failed to fetch activity definitions",
-      );
+      setError(classifyAxiosError(err));
       setData([]);
     } finally {
       setLoading(false);

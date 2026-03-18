@@ -15,10 +15,12 @@ import { ActivityDefinition } from "../../../features/activityDefinition/Activit
 import { useAppStore } from "../../../store/appStore";
 import { useTableFiltering } from "../../../hooks/useTableFiltering";
 import { useBasketStore } from "../../../store/basketStore";
+import { TableErrorState } from "./TableErrorState";
 
 type ActivityDefinitionTableProps = {
   listData: ActivityDefinition[];
   listLoading: boolean;
+  listError?: string | null;
 };
 
 const ActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
@@ -71,6 +73,8 @@ const ActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
                   Ładowanie definicji...
                 </TableCell>
               </TableRow>
+            ) : props.listError ? (
+              <TableErrorState error={props.listError} colSpan={6} />
             ) : filteredData.length === 0 ? (
               <TableRow>
                 <TableCell
