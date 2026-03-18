@@ -11,7 +11,7 @@ interface UseCitationsResult {
 }
 
 export const useGetCitations = (
-  observationId: string | null,
+  obsId: string | null,
 ): UseCitationsResult => {
   const [data, setData] = useState<CitationItem[] | { message: string } | null>(
     null,
@@ -20,7 +20,7 @@ export const useGetCitations = (
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!observationId) {
+    if (!obsId) {
       setData(null);
       return;
     }
@@ -30,7 +30,7 @@ export const useGetCitations = (
         setLoading(true);
         setError(null);
         const response = await axios.get(
-          `${API_BASE_URL}/citations/${observationId}`,
+          `${API_BASE_URL}/citations/${obsId}`,
         );
         setData(response.data);
       } catch (err: any) {
@@ -47,7 +47,7 @@ export const useGetCitations = (
     };
 
     fetchData();
-  }, [observationId]);
+  }, [obsId]);
 
   return { data, loading, error };
 };

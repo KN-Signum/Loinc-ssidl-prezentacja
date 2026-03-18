@@ -11,14 +11,14 @@ interface UseObservationDefinitionResult {
 }
 
 export const useGetObservationDefinition = (
-  id: string | null,
+  obsId: string | null,
 ): UseObservationDefinitionResult => {
   const [data, setData] = useState<ObservationDefinition | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!id) {
+    if (!obsId) {
       setData(null);
       return;
     }
@@ -28,7 +28,7 @@ export const useGetObservationDefinition = (
         setLoading(true);
         setError(null);
         const response = await axios.get(
-          `${API_BASE_URL}/observation-definitions/${id}`,
+          `${API_BASE_URL}/observation-definitions/${obsId}`,
         );
         setData(new ObservationDefinition(response.data));
       } catch (err: any) {
@@ -45,15 +45,14 @@ export const useGetObservationDefinition = (
     };
 
     fetchData();
-  }, [id]);
+  }, [obsId]);
 
   return { data, loading, error };
 };
 
 export interface ObservationDefinitionListItem {
   id: string;
-  code: string | null;
-  display: string | null;
+  preferredReportName: string | null;
 }
 
 interface UseObservationDefinitionListResult {

@@ -5,6 +5,9 @@ interface AppState {
   detailsId: string | null;
   setDetailsId: (id: string | null) => void;
 
+  selectedObsId: string | null;
+  setSelectedObsId: (id: string | null) => void;
+
   searchTerm: string;
   setSearchTerm: (term: string) => void;
 
@@ -22,7 +25,10 @@ export const useAppStore = create<AppState>()(
   persist(
     (set) => ({
       detailsId: null,
-      setDetailsId: (id: string | null) => set({ detailsId: id }),
+      setDetailsId: (id: string | null) => set({ detailsId: id, selectedObsId: null }),
+
+      selectedObsId: null,
+      setSelectedObsId: (id: string | null) => set({ selectedObsId: id }),
 
       searchTerm: "",
       setSearchTerm: (term: string) => set({ searchTerm: term }),
