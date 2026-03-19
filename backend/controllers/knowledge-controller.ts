@@ -65,19 +65,13 @@ export const activityDefinitionByIdController = async (
   }
 };
 
-export const observationDefinitionByIdController = async (
+export const observationDefinitionByObsIdController = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
   try {
-    const { id } = req.params;
-    const activityDefinition = await fetchFhirResource("ActivityDefinition", `/${id}`);
-    const refs = getObservationDefinitionsFromActivityDefinition(activityDefinition);
-    if (refs.length === 0) {
-      res.status(404).json({ error: "No ObservationDefinition linked to this ActivityDefinition" });
-      return;
-    }
-    const result = await fetchFhirResource("ObservationDefinition", `/${refs[0].id}`);
+    const { obsId } = req.params;
+    const result = await fetchFhirResource("ObservationDefinition", `/${obsId}`);
     res.status(200).json(result);
   } catch (error) {
     console.error("Error fetching observation definition:", error);
@@ -102,11 +96,9 @@ export const observationDefinitionListController = async (
       refs.map(async (ref) => {
         try {
           const obsDef = await fetchFhirResource("ObservationDefinition", `/${ref.id}`);
-          const coding = obsDef?.code?.coding?.[0];
           return {
             id: obsDef.id,
-            code: coding?.code ?? null,
-            display: coding?.display ?? null,
+            preferredReportName: obsDef.preferredReportName ?? null,
           };
         } catch (error) {
           console.error(`Error fetching ObservationDefinition ${ref.id}:`, error);
@@ -161,24 +153,11 @@ export const citationsController = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const { observationID } = req.params;
+    const { obsId } = req.params;
 
-    if (!observationID) {
-      res.status(400).json({
-        error: "observationID path parameter is required",
-      });
-      return;
-    }
-
-    const activityDefinition = await fetchFhirResource("ActivityDefinition", `/${observationID}`);
-    const refs = getObservationDefinitionsFromActivityDefinition(activityDefinition);
-    if (refs.length === 0) {
-      res.status(200).json({ message: "Brak danych" });
-      return;
-    }
     const observationDefinition = await fetchFhirResource(
       "ObservationDefinition",
-      `/${refs[0].id}`,
+      `/${obsId}`,
     );
     const qualifiedValues = observationDefinition.qualifiedValue || [];
 

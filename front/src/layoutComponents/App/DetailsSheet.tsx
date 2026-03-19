@@ -6,9 +6,8 @@ import {
   CheckCircle2,
   Truck,
   BookOpen,
-  Microscope,
-  Calendar,
-  UserCircle,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import {
   Sheet,
@@ -35,6 +34,7 @@ export interface DetailsSheetProps {
   activityDefinitionData: any;
   citationsData: CitationItem[] | { message: string } | null;
   isLoading: boolean;
+  isMultiObs: boolean;
 }
 
 const DESCRIPTION_CHAR_LIMIT = 300;
@@ -56,10 +56,16 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
   activityDefinitionData,
   citationsData,
   isLoading,
+  isMultiObs,
 }) => {
-  const { detailsId, setDetailsId } = useAppStore();
+  const { detailsId, setDetailsId, selectedObsId, setSelectedObsId } = useAppStore();
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [genderFilter, setGenderFilter] = useState<GenderFilter>("all");
+
+  const showSelectionScreen = isMultiObs && !selectedObsId;
+  const waitingForObsResolution =
+    (!selectedObsId && (isLoading || observationListLoading)) ||
+    (!!selectedObsId && !observationData);
 
   useEffect(() => {
     setIsDescriptionExpanded(false);
@@ -119,16 +125,50 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
       onOpenChange={(open: boolean) => !open && setDetailsId(null)}
     >
       <SheetContent className="w-full mx-4 sm:max-w-xl overflow-y-auto">
-        {isLoading ? (
+        {waitingForObsResolution || (isLoading && !showSelectionScreen) ? (
           <div className="flex h-full items-center justify-center flex-col gap-4">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
             <p className="text-sm text-slate-500">
               Pobieranie definicji FHIR...
             </p>
           </div>
+        ) : showSelectionScreen ? (
+          <>
+            <SheetHeader className="mb-6 space-y-1">
+              <SheetTitle className="text-2xl leading-tight">
+                {activityDefinitionData?.title || "Wybierz parametr"}
+              </SheetTitle>
+              <p className="text-sm text-slate-500">
+                Wybierz parametr badania, aby zobaczyć szczegóły.
+              </p>
+            </SheetHeader>
+            <div className="space-y-2">
+              {observationList.map((obs) => (
+                <button
+                  key={obs.id}
+                  onClick={() => setSelectedObsId(obs.id)}
+                  className="w-full flex items-center justify-between rounded-lg border border-slate-200 bg-white p-4 text-left shadow-sm hover:border-blue-300 hover:bg-blue-50/50 transition-colors"
+                >
+                  <span className="text-sm font-medium text-slate-800">
+                    {obs.preferredReportName ?? obs.id}
+                  </span>
+                  <ChevronRight className="h-4 w-4 text-slate-400 shrink-0" />
+                </button>
+              ))}
+            </div>
+          </>
         ) : (
           <>
             <SheetHeader className="mb-1 space-y-1">
+              {isMultiObs && (
+                <button
+                  onClick={() => setSelectedObsId(null)}
+                  className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-medium mb-1 w-fit"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Powrót
+                </button>
+              )}
               <SheetTitle className="text-2xl leading-tight">
                 {observationData?.preferredReportName || "Szczegóły Badania"}
               </SheetTitle>
@@ -150,6 +190,20 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
                   </Badge>
                 ))}
               </div>
+              {(observationData?.code || observationData?.codeDisplay) && (
+                <div className="flex flex-wrap items-baseline gap-2">
+                  {observationData.code && (
+                    <span className="font-mono text-xs text-slate-400">
+                      {observationData.code}
+                    </span>
+                  )}
+                  {observationData.codeDisplay && (
+                    <span className="text-xs text-slate-400">
+                      {observationData.codeDisplay}
+                    </span>
+                  )}
+                </div>
+              )}
             </SheetHeader>
 
             <div className="space-y-8">
@@ -482,52 +536,6 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
                 </section>
               )}
 
-              {(observationList.length > 0 || observationListLoading) && (
-                <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm mb-10">
-                  <h4 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">
-                    <Microscope className="h-4 w-4" />
-                    Parametry Badania ({observationList.length})
-                  </h4>
-                  {observationListLoading ? (
-                    <div className="flex items-center gap-2 py-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600" />
-                      <span className="text-sm text-slate-500">
-                        Pobieranie parametrów...
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="max-h-72 overflow-y-auto scrollbar-hide">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b border-slate-200">
-                            <th className="text-left py-2 pr-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                              Kod
-                            </th>
-                            <th className="text-left py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                              Nazwa
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {observationList.map((obs) => (
-                            <tr
-                              key={obs.id}
-                              className="border-b border-slate-100 last:border-b-0"
-                            >
-                              <td className="py-2 pr-3 font-mono text-xs text-slate-500 whitespace-nowrap">
-                                {obs.code ?? "—"}
-                              </td>
-                              <td className="py-2 text-slate-700">
-                                {obs.display ?? "—"}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </section>
-              )}
             </div>
           </>
         )}

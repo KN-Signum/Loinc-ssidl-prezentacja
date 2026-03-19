@@ -5,12 +5,11 @@ import {
   citationsController,
   conditionDefinitionByIdController,
   locationController,
-  observationDefinitionByIdController,
+  observationDefinitionByObsIdController,
   observationDefinitionListController,
   specimenDefinitionByIdController,
   ageUnitsController,
 } from "../controllers/knowledge-controller.js";
-import { fetchFhirResource } from "../services/fhir-service.js";
 
 const router = Router();
 
@@ -18,7 +17,7 @@ router.get("/activity-definitions", activityDefinitionByTitleController);
 
 router.get("/activity-definitions/:id", activityDefinitionByIdController);
 
-router.get("/observation-definitions/:id", observationDefinitionByIdController);
+router.get("/observation-definitions/:obsId", observationDefinitionByObsIdController);
 
 router.get("/observation-definitions-list/:id", observationDefinitionListController);
 
@@ -26,7 +25,7 @@ router.get("/specimen-definitions/:id", specimenDefinitionByIdController);
 
 router.get("/condition-definitions/:id", conditionDefinitionByIdController);
 
-router.get("/citations/:observationID", citationsController);
+router.get("/citations/:obsId", citationsController);
 
 router.get("/locations/:type", locationController);
 
