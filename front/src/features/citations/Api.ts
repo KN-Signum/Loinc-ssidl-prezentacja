@@ -10,6 +10,16 @@ interface UseCitationsResult {
   error: string | null;
 }
 
+export const useGetAgeUnits = (): Record<string, string> => {
+  const [units, setUnits] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    axios.get(`${API_BASE_URL}/age-units`).then((r) => setUnits(r.data)).catch(() => {});
+  }, []);
+
+  return units;
+};
+
 export const useGetCitations = (
   obsId: string | null,
 ): UseCitationsResult => {

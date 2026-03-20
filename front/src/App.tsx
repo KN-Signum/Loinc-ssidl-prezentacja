@@ -31,10 +31,13 @@ export default function App() {
 
   const activityDefinitionQuery = useGetActivityDefinition(detailsId ?? "");
   const activityDefinitionData = activityDefinitionQuery.data;
+  const dataIsForCurrentId = activityDefinitionQuery.loadedId === detailsId;
 
-  const obsIds = extractObsIds(activityDefinitionData?.observationResultRequirement);
+  const obsIds = dataIsForCurrentId
+    ? extractObsIds(activityDefinitionData?.observationResultRequirement)
+    : [];
   const singleObsId = obsIds.length === 1 ? obsIds[0] : null;
-  const isMultiObs = !activityDefinitionQuery.loading && obsIds.length > 1;
+  const isMultiObs = dataIsForCurrentId && obsIds.length > 1;
 
   useEffect(() => {
     if (singleObsId && !selectedObsId) {

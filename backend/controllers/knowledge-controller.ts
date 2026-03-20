@@ -20,15 +20,6 @@ function handleFhirError(res: Response, error: unknown): void {
   }
 }
 
-async function getAgeUnitMap(): Promise<Map<string, string>> {
-  try {
-    const valueSet = await fetchFhirResource("ValueSet", `/${AGE_UNITS_VALUE_SET_ID}`);
-    const concepts = valueSet?.compose?.include?.[0]?.concept ?? [];
-    return new Map(concepts.map((c: { code: string; display: string }) => [c.code, c.display]));
-  } catch {
-    return new Map([["a", "lat"], ["mo", "miesięcy"], ["d", "dni"], ["wk", "tygodni"]]);
-  }
-}
 
 export const activityDefinitionByTitleController = async (
   req: Request,
@@ -166,25 +157,6 @@ export const citationsController = async (
       return;
     }
 
-    const ageUnitMap = await getAgeUnitMap();
-    const mapAgeUnit = (age: any) => {
-      if (!age) return null;
-      const mappedAge = { ...age };
-      if (mappedAge.low?.unit) {
-        mappedAge.low = {
-          ...mappedAge.low,
-          unit: ageUnitMap.get(mappedAge.low.unit) || mappedAge.low.unit,
-        };
-      }
-      if (mappedAge.high?.unit) {
-        mappedAge.high = {
-          ...mappedAge.high,
-          unit: ageUnitMap.get(mappedAge.high.unit) || mappedAge.high.unit,
-        };
-      }
-      return mappedAge;
-    };
-
     const citationsWithRanges = await Promise.all(
       qualifiedValues.map(async (qv: any) => {
         const citationReference = qv.extension?.find((ext: any) =>
@@ -200,7 +172,7 @@ export const citationsController = async (
         const citationId = citationReference.split("/")[1];
         const range = qv.range || null;
         const gender = qv.gender;
-        const age = mapAgeUnit(qv.age);
+        const age = qv.age || null;
 
         try {
           const citationResponse = await fetchFhirResource(

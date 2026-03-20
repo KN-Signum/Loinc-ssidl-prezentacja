@@ -17,6 +17,7 @@ function classifyAxiosError(err: any): string {
 
 interface UseActivityDefinitionResult {
   data: ActivityDefinition | null;
+  loadedId: string | null;
   loading: boolean;
   error: string | null;
 }
@@ -35,26 +36,34 @@ export const useGetActivityDefinition = (
   id: string,
 ): UseActivityDefinitionResult => {
   const [data, setData] = useState<ActivityDefinition | null>(null);
+  const [loadedId, setLoadedId] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) {
+      setData(null);
+      setLoadedId(null);
       setLoading(false);
       return;
     }
 
+    setData(null);
+    setLoadedId(null);
+    setLoading(true);
+    setError(null);
+
     const fetchActivityDefinition = async () => {
       try {
-        setLoading(true);
-        setError(null);
         const response = await axios.get(
           `${API_BASE_URL}/activity-definitions/${id}`,
         );
         setData(new ActivityDefinition(response.data));
+        setLoadedId(id);
       } catch (err: any) {
         setError(classifyAxiosError(err));
         setData(null);
+        setLoadedId(null);
       } finally {
         setLoading(false);
       }
@@ -63,7 +72,7 @@ export const useGetActivityDefinition = (
     fetchActivityDefinition();
   }, [id]);
 
-  return { data, loading, error };
+  return { data, loadedId, loading, error };
 };
 
 export const useGetActivityDefinitionsByTitle = (
