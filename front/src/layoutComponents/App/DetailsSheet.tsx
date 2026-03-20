@@ -23,6 +23,7 @@ import {
   AccordionContent,
 } from "../../components/ui/accordion";
 import { CitationItem } from "../../features/citations/types";
+import { useGetAgeUnits } from "../../features/citations/Api";
 import { ObservationDefinitionListItem } from "../../features/observationDefinition/Api";
 import { useAppStore } from "../../store/appStore";
 
@@ -48,6 +49,9 @@ const genderLabel: Record<string, string> = {
 
 type GenderFilter = "all" | "male" | "female";
 
+const CHILD_AGE_THRESHOLD_YEARS = 18;
+
+
 export const DetailsSheet: React.FC<DetailsSheetProps> = ({
   specimenData,
   observationData,
@@ -58,9 +62,12 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
   isLoading,
   isMultiObs,
 }) => {
-  const { detailsId, setDetailsId, selectedObsId, setSelectedObsId } = useAppStore();
+  const { detailsId, setDetailsId, selectedObsId, setSelectedObsId } =
+    useAppStore();
+  const ageUnits = useGetAgeUnits();
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [genderFilter, setGenderFilter] = useState<GenderFilter>("all");
+  const [showChildren, setShowChildren] = useState(true);
 
   const showSelectionScreen = isMultiObs && !selectedObsId;
   const waitingForObsResolution =
@@ -70,6 +77,7 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
   useEffect(() => {
     setIsDescriptionExpanded(false);
     setGenderFilter("all");
+    setShowChildren(true);
   }, [detailsId]);
 
   const nfzCodes: { code: string; display: string }[] = (() => {
@@ -103,12 +111,44 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
     : [];
   const showGenderFilter = hasGenderedData && availableGenders.length > 1;
 
+  const ageToYears = (item: CitationItem): number => {
+    const unit = item.age?.low?.unit || item.age?.high?.unit || "";
+    const val = item.age?.low?.value ?? item.age?.high?.value ?? Infinity;
+    if (unit === "a") return val;
+    if (unit === "mo") return val / 12;
+    if (unit === "wk") return val / 52;
+    if (unit === "d") return val / 365;
+    return val;
+  };
+
+  const isChildItem = (item: CitationItem): boolean => {
+    if (!item.age) return false;
+    const lowUnit = item.age.low?.unit || "";
+    const highUnit = item.age.high?.unit || "";
+    if (lowUnit === "d" || lowUnit === "wk") return true;
+    if (highUnit === "d" || highUnit === "wk") return true;
+    if (lowUnit === "mo" || highUnit === "mo") return true;
+    if (highUnit === "a" && (item.age.high?.value ?? Infinity) <= CHILD_AGE_THRESHOLD_YEARS)
+      return true;
+    return false;
+  };
+
+  const hasChildData = citationsArray?.some(isChildItem) ?? false;
+
   const filteredCitations = citationsArray
-    ? citationsArray.filter((item) => {
-        if (genderFilter === "all") return true;
-        if (!item.gender) return true;
-        return item.gender === genderFilter;
-      })
+    ? citationsArray
+        .filter((item) => {
+          if (
+            genderFilter !== "all" &&
+            item.gender &&
+            item.gender !== genderFilter
+          )
+            return false;
+          if (!showChildren && isChildItem(item)) return false;
+          return true;
+        })
+        .slice()
+        .sort((a, b) => ageToYears(a) - ageToYears(b))
     : null;
 
   const handlingInstructions = specimenData?.handlingInstructions ?? [];
@@ -342,37 +382,51 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
 
               {citationsData && (
                 <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
                     <h4 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-500">
                       <BookOpen className="h-4 w-4" />
                       Wartości Referencyjne
                     </h4>
 
-                    {showGenderFilter && (
-                      <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
-                        {filterButtons
-                          .filter(
-                            (btn) =>
-                              btn.value === "all" ||
-                              availableGenders.includes(btn.value),
-                          )
-                          .map((btn) => (
-                            <button
-                              key={btn.value}
-                              onClick={() => {
-                                setGenderFilter(btn.value);
-                              }}
-                              className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-                                genderFilter === btn.value
-                                  ? "bg-white text-slate-900 shadow-sm"
-                                  : "text-slate-500 hover:text-slate-700"
-                              }`}
-                            >
-                              {btn.label}
-                            </button>
-                          ))}
-                      </div>
-                    )}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {hasChildData && (
+                        <button
+                          onClick={() => setShowChildren((v) => !v)}
+                          className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${
+                            showChildren
+                              ? "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+                              : "bg-slate-100 text-slate-500 border-slate-200 hover:text-slate-700"
+                          }`}
+                        >
+                          {showChildren ? "Ukryj dzieci" : "Pokaż dzieci"}
+                        </button>
+                      )}
+                      {showGenderFilter && (
+                        <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+                          {filterButtons
+                            .filter(
+                              (btn) =>
+                                btn.value === "all" ||
+                                availableGenders.includes(btn.value),
+                            )
+                            .map((btn) => (
+                              <button
+                                key={btn.value}
+                                onClick={() => {
+                                  setGenderFilter(btn.value);
+                                }}
+                                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                                  genderFilter === btn.value
+                                    ? "bg-white text-slate-900 shadow-sm"
+                                    : "text-slate-500 hover:text-slate-700"
+                                }`}
+                              >
+                                {btn.label}
+                              </button>
+                            ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex flex-col gap-3">
@@ -428,10 +482,11 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
                               const ageHigh = formatRangeValue(
                                 item.age?.high?.value,
                               );
-                              const ageUnit =
+                              const ageUnitCode =
                                 item.age?.low?.unit ||
                                 item.age?.high?.unit ||
                                 "";
+                              const ageUnit = ageUnits[ageUnitCode] || ageUnitCode;
                               let ageSummary = "";
                               if (
                                 ageLow !== undefined &&
@@ -535,7 +590,6 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
                   </div>
                 </section>
               )}
-
             </div>
           </>
         )}
