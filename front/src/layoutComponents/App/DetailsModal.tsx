@@ -59,9 +59,9 @@ type View = "activity" | "observation";
 
 const CHILD_AGE_THRESHOLD_YEARS = 18;
 
-const SkeletonBlock: React.FC<{ className?: string }> = ({ className = "" }) => (
-  <div className={`animate-pulse rounded bg-slate-200 ${className}`} />
-);
+const SkeletonBlock: React.FC<{ className?: string }> = ({
+  className = "",
+}) => <div className={`animate-pulse rounded bg-slate-200 ${className}`} />;
 
 const ActivitySkeleton: React.FC = () => (
   <>
@@ -96,10 +96,10 @@ const ActivitySkeleton: React.FC = () => (
   </>
 );
 
-const ObservationSkeleton: React.FC<{ onBack: () => void; parentTitle: string }> = ({
-  onBack,
-  parentTitle,
-}) => (
+const ObservationSkeleton: React.FC<{
+  onBack: () => void;
+  parentTitle: string;
+}> = ({ onBack, parentTitle }) => (
   <>
     <DialogHeader className="mb-1 space-y-2">
       <button
@@ -109,7 +109,9 @@ const ObservationSkeleton: React.FC<{ onBack: () => void; parentTitle: string }>
         <ChevronLeft className="h-4 w-4" />
         Powrót do {parentTitle}
       </button>
-      <DialogTitle className="sr-only">Ładowanie szczegółów parametru</DialogTitle>
+      <DialogTitle className="sr-only">
+        Ładowanie szczegółów parametru
+      </DialogTitle>
       <SkeletonBlock className="h-7 w-2/3" />
       <div className="flex flex-wrap gap-2">
         <SkeletonBlock className="h-6 w-28" />
@@ -125,7 +127,6 @@ const ObservationSkeleton: React.FC<{ onBack: () => void; parentTitle: string }>
     </div>
   </>
 );
-
 
 export const DetailsModal: React.FC<DetailsModalProps> = ({
   specimenData,
@@ -171,11 +172,14 @@ export const DetailsModal: React.FC<DetailsModalProps> = ({
       const subExts: any[] = nfzExt.extension ?? [];
       const coding = subExts.find((e: any) => e.url === "type")?.valueCoding;
       return coding?.code
-        ? [{ code: coding.code as string, display: (coding.display ?? coding.code) as string }]
+        ? [
+            {
+              code: coding.code as string,
+              display: (coding.display ?? coding.code) as string,
+            },
+          ]
         : [];
     });
-
-  console.log("[DetailsModal] NFZ codes:", nfzCodes);
 
   const description = activityDefinitionData?.description || "";
   const isDescriptionLong = description.length > DESCRIPTION_CHAR_LIMIT;
@@ -211,7 +215,10 @@ export const DetailsModal: React.FC<DetailsModalProps> = ({
     if (lowUnit === "d" || lowUnit === "wk") return true;
     if (highUnit === "d" || highUnit === "wk") return true;
     if (lowUnit === "mo" || highUnit === "mo") return true;
-    if (highUnit === "a" && (item.age.high?.value ?? Infinity) <= CHILD_AGE_THRESHOLD_YEARS)
+    if (
+      highUnit === "a" &&
+      (item.age.high?.value ?? Infinity) <= CHILD_AGE_THRESHOLD_YEARS
+    )
       return true;
     return false;
   };
@@ -600,7 +607,8 @@ export const DetailsModal: React.FC<DetailsModalProps> = ({
                                 item.age?.low?.unit ||
                                 item.age?.high?.unit ||
                                 "";
-                              const ageUnit = ageUnits[ageUnitCode] || ageUnitCode;
+                              const ageUnit =
+                                ageUnits[ageUnitCode] || ageUnitCode;
                               let ageSummary = "";
                               if (
                                 ageLow !== undefined &&
