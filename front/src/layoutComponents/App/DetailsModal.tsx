@@ -164,22 +164,30 @@ export const DetailsModal: React.FC<DetailsModalProps> = ({
     setView("activity");
   };
 
-  const nfzCodes: { code: string; display: string }[] = (
-    (activityDefinitionData?.extension ?? []) as any[]
-  )
-    .filter((e: any) => e.url?.endsWith("activityDefinition-nfzCode"))
-    .flatMap((nfzExt: any) => {
-      const subExts: any[] = nfzExt.extension ?? [];
-      const coding = subExts.find((e: any) => e.url === "type")?.valueCoding;
-      return coding?.code
-        ? [
-            {
-              code: coding.code as string,
-              display: (coding.display ?? coding.code) as string,
-            },
-          ]
-        : [];
-    });
+  const nfzCodes: { code: string; display: string }[] = Array.from(
+    new Map(
+      ((activityDefinitionData?.extension ?? []) as any[])
+        .filter((e: any) => e.url?.endsWith("activityDefinition-nfzCode"))
+        .flatMap((nfzExt: any) => {
+          const subExts: any[] = nfzExt.extension ?? [];
+          const coding = subExts.find(
+            (e: any) => e.url === "type",
+          )?.valueCoding;
+          return coding?.code
+            ? [
+                {
+                  code: coding.code as string,
+                  display: (coding.display ?? coding.code) as string,
+                },
+              ]
+            : [];
+        })
+        .map(
+          (item) =>
+            [item.code, item] as [string, { code: string; display: string }],
+        ),
+    ).values(),
+  );
 
   const description = activityDefinitionData?.description || "";
   const isDescriptionLong = description.length > DESCRIPTION_CHAR_LIMIT;
@@ -265,7 +273,7 @@ export const DetailsModal: React.FC<DetailsModalProps> = ({
       open={!!detailsId}
       onOpenChange={(open: boolean) => !open && setDetailsId(null)}
     >
-      <DialogContent className="w-[min(900px,92vw)] sm:max-w-3xl max-h-[85vh] overflow-y-auto backdrop-blur-sm">
+      <DialogContent className="w-[min(900px,92vw)] sm:max-w-3xl max-h-[85vh] scrollbar-hide overflow-y-auto backdrop-blur-sm">
         {view === "activity" ? (
           activityViewLoading ? (
             <ActivitySkeleton />
