@@ -10,11 +10,11 @@ import {
   ChevronRight,
 } from "lucide-react";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "../../components/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "../../components/ui/dialog";
 import { Badge } from "../../components/ui/badge";
 import {
   Accordion,
@@ -27,16 +27,23 @@ import { useGetAgeUnits } from "../../features/citations/Api";
 import { ObservationDefinitionListItem } from "../../features/observationDefinition/Api";
 import { useAppStore } from "../../store/appStore";
 
-export interface DetailsSheetProps {
+export interface DetailsModalProps {
   specimenData: any;
   observationData: any;
   observationList: ObservationDefinitionListItem[];
-  observationListLoading: boolean;
   activityDefinitionData: any;
   citationsData: CitationItem[] | { message: string } | null;
-  isLoading: boolean;
+  activityViewLoading: boolean;
+  observationViewLoading: boolean;
   isMultiObs: boolean;
+  singleObsId: string | null;
 }
+
+const NFZ_LABELS: Record<string, string> = {
+  NFZSG: "Świadczenie gwarantowane NFZ",
+  NFZPK: "Produkt kontraktowy NFZ",
+  NFZSR: "Świadczenie rozliczane NFZ",
+};
 
 const DESCRIPTION_CHAR_LIMIT = 300;
 
@@ -48,51 +55,127 @@ const genderLabel: Record<string, string> = {
 };
 
 type GenderFilter = "all" | "male" | "female";
+type View = "activity" | "observation";
 
 const CHILD_AGE_THRESHOLD_YEARS = 18;
 
+const SkeletonBlock: React.FC<{ className?: string }> = ({ className = "" }) => (
+  <div className={`animate-pulse rounded bg-slate-200 ${className}`} />
+);
 
-export const DetailsSheet: React.FC<DetailsSheetProps> = ({
+const ActivitySkeleton: React.FC = () => (
+  <>
+    <DialogHeader className="mb-1 space-y-2">
+      <DialogTitle className="sr-only">Ładowanie szczegółów usługi</DialogTitle>
+      <SkeletonBlock className="h-7 w-2/3" />
+      <div className="flex flex-wrap gap-2 mb-2">
+        <SkeletonBlock className="h-6 w-24" />
+        <SkeletonBlock className="h-6 w-40" />
+      </div>
+    </DialogHeader>
+    <div className="space-y-6">
+      <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm space-y-3">
+        <SkeletonBlock className="h-4 w-48" />
+        <SkeletonBlock className="h-4 w-5/6" />
+      </section>
+      <section className="rounded-lg border border-slate-200 bg-slate-50/50 p-4 space-y-4">
+        <SkeletonBlock className="h-4 w-44" />
+        <div className="flex items-center gap-3">
+          <SkeletonBlock className="h-10 w-10" />
+          <div className="flex-1 space-y-2">
+            <SkeletonBlock className="h-3 w-24" />
+            <SkeletonBlock className="h-4 w-2/3" />
+          </div>
+        </div>
+      </section>
+      <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm space-y-3">
+        <SkeletonBlock className="h-4 w-40" />
+        <SkeletonBlock className="h-12 w-full" />
+      </section>
+    </div>
+  </>
+);
+
+const ObservationSkeleton: React.FC<{ onBack: () => void; parentTitle: string }> = ({
+  onBack,
+  parentTitle,
+}) => (
+  <>
+    <DialogHeader className="mb-1 space-y-2">
+      <button
+        onClick={onBack}
+        className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-medium mb-1 w-fit"
+      >
+        <ChevronLeft className="h-4 w-4" />
+        Powrót do {parentTitle}
+      </button>
+      <DialogTitle className="sr-only">Ładowanie szczegółów parametru</DialogTitle>
+      <SkeletonBlock className="h-7 w-2/3" />
+      <div className="flex flex-wrap gap-2">
+        <SkeletonBlock className="h-6 w-28" />
+        <SkeletonBlock className="h-4 w-40" />
+      </div>
+    </DialogHeader>
+    <div className="space-y-6">
+      <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm space-y-3">
+        <SkeletonBlock className="h-4 w-48" />
+        <SkeletonBlock className="h-12 w-full" />
+        <SkeletonBlock className="h-12 w-full" />
+      </section>
+    </div>
+  </>
+);
+
+
+export const DetailsModal: React.FC<DetailsModalProps> = ({
   specimenData,
   observationData,
   observationList,
-  observationListLoading,
   activityDefinitionData,
   citationsData,
-  isLoading,
+  activityViewLoading,
+  observationViewLoading,
   isMultiObs,
+  singleObsId,
 }) => {
-  const { detailsId, setDetailsId, selectedObsId, setSelectedObsId } =
-    useAppStore();
+  const { detailsId, setDetailsId, setSelectedObsId } = useAppStore();
   const ageUnits = useGetAgeUnits();
+  const [view, setView] = useState<View>("activity");
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [genderFilter, setGenderFilter] = useState<GenderFilter>("all");
   const [showChildren, setShowChildren] = useState(true);
 
-  const showSelectionScreen = isMultiObs && !selectedObsId;
-  const waitingForObsResolution =
-    (!selectedObsId && (isLoading || observationListLoading)) ||
-    (!!selectedObsId && !observationData);
-
   useEffect(() => {
+    setView("activity");
+    setSelectedObsId(null);
     setIsDescriptionExpanded(false);
     setGenderFilter("all");
     setShowChildren(true);
-  }, [detailsId]);
+  }, [detailsId, setSelectedObsId]);
 
-  const nfzCodes: { code: string; display: string }[] = (() => {
-    const extensions: any[] = activityDefinitionData?.extension ?? [];
-    return extensions
-      .filter((e: any) => e.url?.endsWith("activityDefinition-nfzCode"))
-      .map((nfzExt: any) => {
-        const subExts: any[] = nfzExt.extension ?? [];
-        const coding = subExts.find((e: any) => e.url === "type")?.valueCoding;
-        return coding?.code
-          ? { code: coding.code, display: coding.display ?? coding.code }
-          : null;
-      })
-      .filter(Boolean);
-  })();
+  const goToObservation = (obsId: string) => {
+    setSelectedObsId(obsId);
+    setView("observation");
+  };
+
+  const goBackToActivity = () => {
+    setSelectedObsId(null);
+    setView("activity");
+  };
+
+  const nfzCodes: { code: string; display: string }[] = (
+    (activityDefinitionData?.extension ?? []) as any[]
+  )
+    .filter((e: any) => e.url?.endsWith("activityDefinition-nfzCode"))
+    .flatMap((nfzExt: any) => {
+      const subExts: any[] = nfzExt.extension ?? [];
+      const coding = subExts.find((e: any) => e.url === "type")?.valueCoding;
+      return coding?.code
+        ? [{ code: coding.code as string, display: (coding.display ?? coding.code) as string }]
+        : [];
+    });
+
+  console.log("[DetailsModal] NFZ codes:", nfzCodes);
 
   const description = activityDefinitionData?.description || "";
   const isDescriptionLong = description.length > DESCRIPTION_CHAR_LIMIT;
@@ -159,227 +242,258 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
     { label: "Kobieta", value: "female" },
   ];
 
+  const parameters: ObservationDefinitionListItem[] = isMultiObs
+    ? observationList
+    : singleObsId
+      ? [
+          {
+            id: singleObsId,
+            preferredReportName: null,
+          },
+        ]
+      : [];
+
   return (
-    <Sheet
+    <Dialog
       open={!!detailsId}
       onOpenChange={(open: boolean) => !open && setDetailsId(null)}
     >
-      <SheetContent className="w-full mx-4 sm:max-w-xl overflow-y-auto">
-        {waitingForObsResolution || (isLoading && !showSelectionScreen) ? (
-          <div className="flex h-full items-center justify-center flex-col gap-4">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-            <p className="text-sm text-slate-500">
-              Pobieranie definicji FHIR...
-            </p>
-          </div>
-        ) : showSelectionScreen ? (
-          <>
-            <SheetHeader className="mb-6 space-y-1">
-              <SheetTitle className="text-2xl leading-tight">
-                {activityDefinitionData?.title || "Wybierz parametr"}
-              </SheetTitle>
-              <p className="text-sm text-slate-500">
-                Wybierz parametr badania, aby zobaczyć szczegóły.
-              </p>
-            </SheetHeader>
-            <div className="space-y-2">
-              {observationList.map((obs) => (
-                <button
-                  key={obs.id}
-                  onClick={() => setSelectedObsId(obs.id)}
-                  className="w-full flex items-center justify-between rounded-lg border border-slate-200 bg-white p-4 text-left shadow-sm hover:border-blue-300 hover:bg-blue-50/50 transition-colors"
-                >
-                  <span className="text-sm font-medium text-slate-800">
-                    {obs.preferredReportName ?? obs.id}
-                  </span>
-                  <ChevronRight className="h-4 w-4 text-slate-400 shrink-0" />
-                </button>
-              ))}
-            </div>
-          </>
+      <DialogContent className="w-[min(900px,92vw)] sm:max-w-3xl max-h-[85vh] overflow-y-auto backdrop-blur-sm">
+        {view === "activity" ? (
+          activityViewLoading ? (
+            <ActivitySkeleton />
+          ) : (
+            <>
+              <DialogHeader className="mb-1 space-y-1">
+                <DialogTitle className="text-2xl leading-tight">
+                  {activityDefinitionData?.title || "Szczegóły Usługi"}
+                </DialogTitle>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  <Badge
+                    variant="outline"
+                    className="w-fit text-blue-700 border-blue-200 bg-blue-50 font-mono"
+                  >
+                    LOINC:{" "}
+                    {activityDefinitionData?.code?.coding?.[0]?.code || "N/A"}
+                  </Badge>
+                  {nfzCodes.map((nfz, idx) => (
+                    <Badge
+                      key={idx}
+                      variant="outline"
+                      className="w-fit text-emerald-700 border-emerald-200 bg-emerald-50"
+                    >
+                      {NFZ_LABELS[nfz.code] ?? nfz.display}
+                    </Badge>
+                  ))}
+                </div>
+              </DialogHeader>
+
+              <div className="space-y-8">
+                {activityDefinitionData?.description && (
+                  <section className="rounded-lg border border-slate-200 bg-slate-50/50 p-4">
+                    <h4 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-2">
+                      Opis
+                    </h4>
+                    <p className="text-sm text-slate-700 leading-relaxed">
+                      {displayedDescription}
+                    </p>
+                    {isDescriptionLong && (
+                      <button
+                        onClick={() =>
+                          setIsDescriptionExpanded(!isDescriptionExpanded)
+                        }
+                        className="mt-2 text-sm text-blue-600 hover:text-blue-800 font-medium underline"
+                      >
+                        {isDescriptionExpanded ? "pokaż mniej" : "pokaż więcej"}
+                      </button>
+                    )}
+                  </section>
+                )}
+
+                {specimenData && (
+                  <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                    <h4 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">
+                      <ClipboardList className="h-4 w-4" />
+                      Przygotowanie Pacjenta
+                    </h4>
+                    {specimenData.patientPreparation.length > 0 ? (
+                      <ul className="space-y-2">
+                        {specimenData.patientPreparation.map(
+                          (text: string, idx: number) => (
+                            <li
+                              key={idx}
+                              className="flex gap-2 text-sm text-slate-700"
+                            >
+                              <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                              <span>{text}</span>
+                            </li>
+                          ),
+                        )}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-slate-500 italic">
+                        Brak specyficznych zaleceń.
+                      </p>
+                    )}
+                  </section>
+                )}
+
+                {specimenData && (
+                  <section className="rounded-lg border border-slate-200 bg-slate-50/50 p-4">
+                    <h4 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">
+                      <FlaskConical className="h-4 w-4" />
+                      Specyfikacja Materiału
+                    </h4>
+
+                    <div className="space-y-4">
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white border border-slate-200 text-blue-600 shadow-sm">
+                          <TestTube2 className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <span className="block text-xs font-semibold text-slate-500">
+                            Typ Materiału
+                          </span>
+                          <div className="flex items-center gap-2 text-sm font-medium text-slate-900">
+                            <p className="uppercase">
+                              {specimenData.display?.toLowerCase()}
+                            </p>
+                            <p className="text-slate-300">|</p>
+                            <p className="text-slate-500">
+                              KOD: {specimenData?.collectionCode || "N/A"}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {handlingInstructions.length > 0 && (
+                        <div className="pt-2 border-t border-slate-200 mt-2">
+                          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-2">
+                            Instrukcje Obsługi ({handlingInstructions.length})
+                          </span>
+                          <div className="max-h-64 overflow-y-auto scrollbar-hide">
+                            <Accordion
+                              type="single"
+                              collapsible
+                              className="w-full"
+                            >
+                              {handlingInstructions.map(
+                                (
+                                  item: {
+                                    displayName: string;
+                                    code: string;
+                                    instruction: string;
+                                  },
+                                  idx: number,
+                                ) => (
+                                  <AccordionItem
+                                    key={idx}
+                                    value={`handling-${idx}`}
+                                    className="border-b border-slate-200"
+                                  >
+                                    <AccordionTrigger className="py-3 hover:no-underline">
+                                      <div className="flex items-center gap-2">
+                                        <Truck className="h-4 w-4 text-blue-600 shrink-0" />
+                                        <span className="text-sm font-semibold text-slate-900">
+                                          {item.displayName}
+                                        </span>
+                                        <Badge
+                                          variant="outline"
+                                          className="text-xs font-mono"
+                                        >
+                                          {item.code}
+                                        </Badge>
+                                      </div>
+                                    </AccordionTrigger>
+                                    <AccordionContent>
+                                      <p className="text-sm text-slate-700 leading-relaxed pl-6">
+                                        {item.instruction}
+                                      </p>
+                                    </AccordionContent>
+                                  </AccordionItem>
+                                ),
+                              )}
+                            </Accordion>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </section>
+                )}
+
+                <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                  <h4 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">
+                    <BookOpen className="h-4 w-4" />
+                    Parametry badania
+                    {parameters.length > 0 && (
+                      <span className="text-slate-400 font-normal normal-case tracking-normal">
+                        ({parameters.length})
+                      </span>
+                    )}
+                  </h4>
+                  {parameters.length === 0 ? (
+                    <p className="text-sm text-slate-500 italic">
+                      Brak parametrów powiązanych z tą usługą.
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {parameters.map((obs) => (
+                        <button
+                          key={obs.id}
+                          onClick={() => goToObservation(obs.id)}
+                          className="w-full flex items-center justify-between rounded-lg border border-slate-200 bg-white p-4 text-left shadow-sm hover:border-blue-300 hover:bg-blue-50/50 transition-colors"
+                        >
+                          <span className="text-sm font-medium text-slate-800">
+                            {obs.preferredReportName ??
+                              "Zobacz wartości referencyjne"}
+                          </span>
+                          <ChevronRight className="h-4 w-4 text-slate-400 shrink-0" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              </div>
+            </>
+          )
+        ) : observationViewLoading ? (
+          <ObservationSkeleton
+            onBack={goBackToActivity}
+            parentTitle={activityDefinitionData?.title || "usługi"}
+          />
         ) : (
           <>
-            <SheetHeader className="mb-1 space-y-1">
-              {isMultiObs && (
-                <button
-                  onClick={() => setSelectedObsId(null)}
-                  className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-medium mb-1 w-fit"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  Powrót
-                </button>
-              )}
-              <SheetTitle className="text-2xl leading-tight">
-                {observationData?.preferredReportName || "Szczegóły Badania"}
-              </SheetTitle>
-              <div className="flex flex-wrap gap-2 mb-2">
-                <Badge
-                  variant="outline"
-                  className="w-fit text-blue-700 border-blue-200 bg-blue-50 font-mono"
-                >
-                  LOINC:{" "}
-                  {activityDefinitionData?.code?.coding?.[0]?.code || "N/A"}
-                </Badge>
-                {nfzCodes.map((nfz, idx) => (
-                  <Badge
-                    key={idx}
-                    variant="outline"
-                    className="w-fit text-emerald-700 border-emerald-200 bg-emerald-50"
-                  >
-                    {nfz.display}: {nfz.code}
-                  </Badge>
-                ))}
-              </div>
+            <DialogHeader className="mb-1 space-y-1">
+              <button
+                onClick={goBackToActivity}
+                className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-medium mb-1 w-fit"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Powrót do {activityDefinitionData?.title || "usługi"}
+              </button>
+              <DialogTitle className="text-2xl leading-tight">
+                {observationData?.preferredReportName || "Szczegóły Parametru"}
+              </DialogTitle>
               {(observationData?.code || observationData?.codeDisplay) && (
                 <div className="flex flex-wrap items-baseline gap-2">
-                  {observationData.code && (
-                    <span className="font-mono text-xs text-slate-400">
-                      {observationData.code}
-                    </span>
+                  {observationData?.code && (
+                    <Badge
+                      variant="outline"
+                      className="w-fit text-blue-700 border-blue-200 bg-blue-50 font-mono"
+                    >
+                      LOINC: {observationData.code}
+                    </Badge>
                   )}
-                  {observationData.codeDisplay && (
-                    <span className="text-xs text-slate-400">
+                  {observationData?.codeDisplay && (
+                    <span className="text-xs text-slate-500">
                       {observationData.codeDisplay}
                     </span>
                   )}
                 </div>
               )}
-            </SheetHeader>
+            </DialogHeader>
 
             <div className="space-y-8">
-              {activityDefinitionData?.description && (
-                <section className="rounded-lg border border-slate-200 bg-slate-50/50 p-4">
-                  <h4 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-2">
-                    Opis
-                  </h4>
-                  <p className="text-sm text-slate-700 leading-relaxed">
-                    {displayedDescription}
-                  </p>
-                  {isDescriptionLong && (
-                    <button
-                      onClick={() =>
-                        setIsDescriptionExpanded(!isDescriptionExpanded)
-                      }
-                      className="mt-2 text-sm text-blue-600 hover:text-blue-800 font-medium underline"
-                    >
-                      {isDescriptionExpanded ? "pokaż mniej" : "pokaż więcej"}
-                    </button>
-                  )}
-                </section>
-              )}
-
-              {/* Przygotowanie Pacjenta */}
-              {specimenData && (
-                <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-                  <h4 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">
-                    <ClipboardList className="h-4 w-4" />
-                    Przygotowanie Pacjenta
-                  </h4>
-                  {specimenData.patientPreparation.length > 0 ? (
-                    <ul className="space-y-2">
-                      {specimenData.patientPreparation.map(
-                        (text: string, idx: number) => (
-                          <li
-                            key={idx}
-                            className="flex gap-2 text-sm text-slate-700"
-                          >
-                            <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
-                            <span>{text}</span>
-                          </li>
-                        ),
-                      )}
-                    </ul>
-                  ) : (
-                    <p className="text-sm text-slate-500 italic">
-                      Brak specyficznych zaleceń.
-                    </p>
-                  )}
-                </section>
-              )}
-
-              {specimenData && (
-                <section className="rounded-lg border border-slate-200 bg-slate-50/50 p-4">
-                  <h4 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">
-                    <FlaskConical className="h-4 w-4" />
-                    Specyfikacja Materiału
-                  </h4>
-
-                  <div className="space-y-4">
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white border border-slate-200 text-blue-600 shadow-sm">
-                        <TestTube2 className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <span className="block text-xs font-semibold text-slate-500">
-                          Typ Materiału
-                        </span>
-                        <div className="flex items-center gap-2 text-sm font-medium text-slate-900">
-                          <p className="uppercase">
-                            {specimenData.display?.toLowerCase()}
-                          </p>
-                          <p className="text-slate-300">|</p>
-                          <p className="text-slate-500">
-                            KOD: {specimenData?.collectionCode || "N/A"}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {handlingInstructions.length > 0 && (
-                      <div className="pt-2 border-t border-slate-200 mt-2">
-                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-2">
-                          Instrukcje Obsługi ({handlingInstructions.length})
-                        </span>
-                        <div className="max-h-64 overflow-y-auto scrollbar-hide">
-                          <Accordion
-                            type="single"
-                            collapsible
-                            className="w-full"
-                          >
-                            {handlingInstructions.map(
-                              (
-                                item: {
-                                  displayName: string;
-                                  code: string;
-                                  instruction: string;
-                                },
-                                idx: number,
-                              ) => (
-                                <AccordionItem
-                                  key={idx}
-                                  value={`handling-${idx}`}
-                                  className="border-b border-slate-200"
-                                >
-                                  <AccordionTrigger className="py-3 hover:no-underline">
-                                    <div className="flex items-center gap-2">
-                                      <Truck className="h-4 w-4 text-blue-600 shrink-0" />
-                                      <span className="text-sm font-semibold text-slate-900">
-                                        {item.displayName}
-                                      </span>
-                                      <Badge
-                                        variant="outline"
-                                        className="text-xs font-mono"
-                                      >
-                                        {item.code}
-                                      </Badge>
-                                    </div>
-                                  </AccordionTrigger>
-                                  <AccordionContent>
-                                    <p className="text-sm text-slate-700 leading-relaxed pl-6">
-                                      {item.instruction}
-                                    </p>
-                                  </AccordionContent>
-                                </AccordionItem>
-                              ),
-                            )}
-                          </Accordion>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </section>
-              )}
-
               {citationsData && (
                 <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
@@ -436,7 +550,7 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
                           Brak danych dla wybranego filtru.
                         </p>
                       ) : (
-                        <div className="max-h-80 overflow-y-auto scrollbar-hide">
+                        <div className="max-h-[60vh] overflow-y-auto scrollbar-hide">
                           <Accordion
                             type="single"
                             collapsible
@@ -593,7 +707,7 @@ export const DetailsSheet: React.FC<DetailsSheetProps> = ({
             </div>
           </>
         )}
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 };

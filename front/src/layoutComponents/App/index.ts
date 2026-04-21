@@ -1,9 +1,9 @@
 export { OrderModal } from './OrderModal';
 export { BasketBar } from './BasketBar';
-export { DetailsSheet } from './DetailsSheet';
+export { DetailsModal } from './DetailsModal';
 export { MainContent } from './MainContent';
 
 export type { OrderModalProps } from './OrderModal';
 export type { BasketBarProps } from './BasketBar';
-export type { DetailsSheetProps } from './DetailsSheet';
+export type { DetailsModalProps } from './DetailsModal';
 export type { MainContentProps } from './MainContent';
