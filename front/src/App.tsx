@@ -3,6 +3,7 @@ import { MainContent } from "./layoutComponents/App/MainContent";
 import { BasketBar } from "./layoutComponents/App/BasketBar";
 import { OrderModal } from "./layoutComponents/App/OrderModal";
 import { DetailsModal } from "./layoutComponents/App/DetailsModal";
+import { Footer } from "./layoutComponents/footer/Footer";
 import { useGetSpecimenDefinition } from "./features/specimenDefinition/Api";
 import { useGetObservationDefinition, useGetObservationDefinitionList } from "./features/observationDefinition/Api";
 import { useGetActivityDefinitionsByTitle, useGetActivityDefinition } from "./features/activityDefinition/Api";
@@ -66,7 +67,9 @@ export default function App() {
   const basketGroups = getBasketGroups(listData || []);
 
   return (
-    <div className="min-h-screen bg-slate-50/50 font-sans text-slate-900 pb-32">
+    <div
+      className={`min-h-screen bg-slate-50/50 font-sans text-slate-900 ${basketItems.length > 0 ? "pb-32" : "pb-0"}`}
+    >
       <Header />
 
       <MainContent
@@ -78,6 +81,8 @@ export default function App() {
         fetchNextPage={fetchNextPage}
         fetchPrevPage={fetchPrevPage}
       />
+
+      <Footer />
 
       <BasketBar
         basketItems={basketItems}
