@@ -1,9 +1,9 @@
-import { useEffect } from "react";
 import Header from "./layoutComponents/header/Header";
 import { MainContent } from "./layoutComponents/App/MainContent";
 import { BasketBar } from "./layoutComponents/App/BasketBar";
 import { OrderModal } from "./layoutComponents/App/OrderModal";
-import { DetailsSheet } from "./layoutComponents/App/DetailsSheet";
+import { DetailsModal } from "./layoutComponents/App/DetailsModal";
+import { Footer } from "./layoutComponents/footer/Footer";
 import { useGetSpecimenDefinition } from "./features/specimenDefinition/Api";
 import { useGetObservationDefinition, useGetObservationDefinitionList } from "./features/observationDefinition/Api";
 import { useGetActivityDefinitionsByTitle, useGetActivityDefinition } from "./features/activityDefinition/Api";
@@ -23,7 +23,6 @@ export default function App() {
   const {
     detailsId,
     selectedObsId,
-    setSelectedObsId,
     searchTerm,
   } = useAppStore();
 
@@ -39,17 +38,18 @@ export default function App() {
   const singleObsId = obsIds.length === 1 ? obsIds[0] : null;
   const isMultiObs = dataIsForCurrentId && obsIds.length > 1;
 
-  useEffect(() => {
-    if (singleObsId && !selectedObsId) {
-      setSelectedObsId(singleObsId);
-    }
-  }, [singleObsId, selectedObsId, setSelectedObsId]);
-
   const specimenQuery = useGetSpecimenDefinition(detailsId);
   const observationListQuery = useGetObservationDefinitionList(isMultiObs ? detailsId : null);
   const observationQuery = useGetObservationDefinition(selectedObsId);
   const citationsQuery = useGetCitations(selectedObsId);
-  const isDetailsLoading = specimenQuery.loading || observationQuery.loading || citationsQuery.loading;
+
+  const activityViewLoading =
+    !dataIsForCurrentId ||
+    activityDefinitionQuery.loading ||
+    specimenQuery.loading ||
+    (isMultiObs && observationListQuery.loading);
+  const observationViewLoading =
+    observationQuery.loading || citationsQuery.loading;
 
   const {
     data: listData,
@@ -67,7 +67,9 @@ export default function App() {
   const basketGroups = getBasketGroups(listData || []);
 
   return (
-    <div className="min-h-screen bg-slate-50/50 font-sans text-slate-900 pb-32">
+    <div
+      className={`min-h-screen bg-slate-50/50 font-sans text-slate-900 ${basketItems.length > 0 ? "pb-32" : "pb-0"}`}
+    >
       <Header />
 
       <MainContent
@@ -80,20 +82,23 @@ export default function App() {
         fetchPrevPage={fetchPrevPage}
       />
 
+      <Footer />
+
       <BasketBar
         basketItems={basketItems}
         basketGroups={basketGroups}
       />
 
-      <DetailsSheet
+      <DetailsModal
         specimenData={specimenQuery.data}
         observationData={observationQuery.data}
         observationList={observationListQuery.data}
-        observationListLoading={observationListQuery.loading}
         activityDefinitionData={activityDefinitionData}
         isMultiObs={isMultiObs}
+        singleObsId={singleObsId}
         citationsData={citationsQuery.data}
-        isLoading={isDetailsLoading}
+        activityViewLoading={activityViewLoading}
+        observationViewLoading={observationViewLoading}
       />
 
       <OrderModal

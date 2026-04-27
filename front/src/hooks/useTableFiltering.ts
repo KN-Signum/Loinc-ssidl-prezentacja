@@ -15,6 +15,7 @@ interface UseTableFilteringResult {
   filteredData: ActivityDefinition[];
   getLoincOrICDCode: (item: ActivityDefinition) => {
     loinc: string;
+    loinc_display: string | null;
     icd_9: string;
     icd_9_display: string | null;
   };
@@ -34,6 +35,7 @@ export const useTableFiltering = ({
   // Memoized code extraction function
   const getLoincOrICDCode = useCallback((item: ActivityDefinition): {
     loinc: string;
+    loinc_display: string | null;
     icd_9: string;
     icd_9_display: string | null;
   } => {
@@ -49,11 +51,13 @@ export const useTableFiltering = ({
       codingArray[1];
 
     const loinc = loincCoding?.code || DEFAULT_CODE;
+    const loinc_display = loincCoding?.display || null;
     const icd_9 = icd9Coding?.code || DEFAULT_CODE;
     const icd_9_display = icd9Coding?.display || null;
 
     return {
       loinc,
+      loinc_display,
       icd_9,
       icd_9_display,
     };

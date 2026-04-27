@@ -30,12 +30,32 @@ type ActivityDefinitionTableProps = {
   onPrevPage?: () => void;
 };
 
+const NO_CODE_LABEL = "Brak kodu";
+const EXPECTED_ROWS_PER_PAGE = 10;
+
+const getCodeTooltipText = ({
+  code,
+  display,
+  systemName,
+  missingDisplayMessage,
+}: {
+  code: string;
+  display: string | null;
+  systemName: string;
+  missingDisplayMessage: string;
+}): string => {
+  if (display) return display;
+  if (code === NO_CODE_LABEL) return `Brak kodu ${systemName} dla tego zasobu.`;
+  return missingDisplayMessage;
+};
+
 const BaseActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
   const {filteredData, getLoincOrICDCode} = useTableFiltering({
     listData: props.listData,
     searchTerm: "",
   });
   const { setDetailsId } = useAppStore();
+  const placeholderRowsCount = Math.max(0, EXPECTED_ROWS_PER_PAGE - filteredData.length);
 
   return (
     <Card className="border-slate-200 shadow-sm">
@@ -51,7 +71,7 @@ const BaseActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {props.listLoading ? (
+            {props.listLoading && filteredData.length === 0 ? (
               <TableRow>
                 <TableCell
                   colSpan={6}
@@ -72,70 +92,104 @@ const BaseActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredData.map((item: any) => {
-                
-                const { loinc, icd_9, icd_9_display } = getLoincOrICDCode(item);
-                const icdTooltipText = icd_9_display
-                  ? icd_9_display
-                  : icd_9 === "Brak kodu"
-                    ? "Brak kodu ICD-9 dla tego zasobu."
-                    : "Brak nazwy zasobu w słowniku ICD (code.coding.display).";
-                return (
-                  <TableRow
-                    key={item.id}
-                    className={`group transition-colors hover:bg-slate-50`}
-                  >
-                    <TableCell className="text-center">
-                    </TableCell>
+              <>
+                {filteredData.map((item: any) => {
+                  const { loinc, loinc_display, icd_9, icd_9_display } = getLoincOrICDCode(item);
+                  const loincTooltipText = getCodeTooltipText({
+                    code: loinc,
+                    display: loinc_display,
+                    systemName: "LOINC",
+                    missingDisplayMessage:
+                      "Brak nazwy zasobu dla kodu LOINC (code.coding.display).",
+                  });
+                  const icdTooltipText = getCodeTooltipText({
+                    code: icd_9,
+                    display: icd_9_display,
+                    systemName: "ICD-9",
+                    missingDisplayMessage:
+                      "Brak nazwy zasobu w słowniku ICD (code.coding.display).",
+                  });
+                  return (
+                    <TableRow
+                      key={item.id}
+                      className={`group transition-colors hover:bg-slate-50`}
+                    >
+                      <TableCell className="text-center">
+                      </TableCell>
 
-                    <TableCell className="align-middle">
-                      <span
-                        className={`font-semibold transition-colors text-slate-900`}
-                      >
-                        {item.title || item.name}
-                      </span>
-                    </TableCell>
-
-                    <TableCell className="align-middle">
-                      <Badge
-                        variant="outline"
-                        className="px-2 py-1 font-mono text-xs bg-slate-50 text-slate-600 border-slate-200"
-                      >
-                        <Activity className="h-3 w-3 mr-1 inline-block" />
-                        {loinc}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="align-middle">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="cursor-pointer">
-                            {icd_9}
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent
-                          side="top"
-                          sideOffset={8}
-                          className="border-blue-300"
+                      <TableCell className="align-middle">
+                        <span
+                          className={`font-semibold transition-colors text-slate-900`}
                         >
-                          {icdTooltipText}
-                        </TooltipContent>
-                      </Tooltip>
-                    </TableCell>
+                          {item.title || item.name}
+                        </span>
+                      </TableCell>
 
-                    <TableCell className="text-right align-middle">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setDetailsId(item.id)}
-                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                      >
-                        <Info className="mr-2 h-4 w-4" />
-                        Szczegóły
-                      </Button>
-                    </TableCell>
+                      <TableCell className="align-middle">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="inline-flex cursor-help">
+                              <Badge
+                                variant="outline"
+                                className="px-2 py-1 font-mono text-xs bg-slate-50 text-slate-600 border-slate-200"
+                              >
+                                <Activity className="h-3 w-3 mr-1 inline-block" />
+                                {loinc}
+                              </Badge>
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent
+                            side="top"
+                            sideOffset={8}
+                            className="border-blue-300"
+                          >
+                            {loincTooltipText}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TableCell>
+                      <TableCell className="align-middle">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="inline-flex cursor-help">
+                              <Badge
+                                variant="outline"
+                                className="px-2 py-1 font-mono text-xs bg-slate-50 text-slate-600 border-slate-200"
+                              >
+                                <Activity className="h-3 w-3 mr-1 inline-block" />
+                                {icd_9}
+                              </Badge>
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent
+                            side="top"
+                            sideOffset={8}
+                            className="border-blue-300"
+                          >
+                            {icdTooltipText}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TableCell>
+
+                      <TableCell className="text-right align-middle">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDetailsId(item.id)}
+                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        >
+                          <Info className="mr-2 h-4 w-4" />
+                          Szczegóły
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+                {Array.from({ length: placeholderRowsCount }).map((_, index) => (
+                  <TableRow key={`placeholder-${index}`} className="hover:bg-transparent">
+                    <TableCell colSpan={6} className="h-[49px]" />
                   </TableRow>
-                );
-              })
+                ))}
+              </>
             )}
           </TableBody>
         </Table>

@@ -52,7 +52,7 @@ function TooltipContent({
         {...props}
       >
         {children}
-        <TooltipPrimitive.Arrow className="bg-popover fill-popover stroke-blue-300 z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45" />
+        <TooltipPrimitive.Arrow className="fill-popover stroke-blue-300 z-50 size-2.5" />
       </TooltipPrimitive.Content>
     </TooltipPrimitive.Portal>
   );
