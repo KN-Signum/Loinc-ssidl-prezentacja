@@ -13,6 +13,7 @@ export class SpecimenDefinition {
   display: string;
   patientPreparation: string[];
   handlingInstructions: HandlingInstruction[];
+  specimenRequirementComment: string | null;
 
   constructor(data: SpecimenDefinitionResource) {
     this.id = data.id;
@@ -24,6 +25,8 @@ export class SpecimenDefinition {
 
     this.patientPreparation =
       data.patientPreparation?.map((prep) => prep.text) || [];
+
+    this.specimenRequirementComment = data.specimenRequirementComment || null;
 
     const handlingList: HandlingInstruction[] = [];
 

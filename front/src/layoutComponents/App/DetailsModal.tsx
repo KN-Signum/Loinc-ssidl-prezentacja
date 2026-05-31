@@ -432,6 +432,17 @@ export const DetailsModal: React.FC<DetailsModalProps> = ({
                           </div>
                         </div>
                       )}
+
+                      {specimenData.specimenRequirementComment && (
+                        <div className="pt-2 border-t border-slate-200 mt-2">
+                          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-2">
+                            Komentarz
+                          </span>
+                          <p className="text-sm text-slate-700 leading-relaxed">
+                            {specimenData.specimenRequirementComment}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </section>
                 )}
