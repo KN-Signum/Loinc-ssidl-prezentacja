@@ -1,9 +1,15 @@
 import { SpecimenDefinitionResource } from "./types";
 
-export interface HandlingInstruction {
-  displayName: string;
-  code: string;
-  instruction: string;
+export interface HandlingSection {
+  title: string;
+  code?: string;
+  instructions: string[];
+}
+
+export interface MaterialInfo {
+  display: string;
+  code?: string;
+  system?: string;
 }
 
 export class SpecimenDefinition {
@@ -12,7 +18,8 @@ export class SpecimenDefinition {
   collectionSystem: string;
   display: string;
   patientPreparation: string[];
-  handlingInstructions: HandlingInstruction[];
+  materials: MaterialInfo[];
+  handlingSections: HandlingSection[];
 
   constructor(data: SpecimenDefinitionResource) {
     this.id = data.id;
@@ -22,32 +29,58 @@ export class SpecimenDefinition {
     this.collectionSystem = mainCoding?.system || "N/A";
     this.display = mainCoding?.display || "N/A";
 
-    this.patientPreparation =
-      data.patientPreparation?.map((prep) => prep.text) || [];
-
-    const handlingList: HandlingInstruction[] = [];
-
+    this.patientPreparation = data.patientPreparation?.map((prep) => prep.text) || [];
+    
+    const mats: MaterialInfo[] = [];
     if (data.typeTested) {
       data.typeTested.forEach((testType) => {
-        if (testType.handling) {
-          testType.handling.forEach((handle) => {
-            if (!handle.instruction) return;
-
-            handle.extension?.forEach((ext) => {
-              const displayName = ext.valueCoding?.display || "N/A";
-              const code = ext.valueCoding?.code || "N/A";
-
-              handlingList.push({
-                displayName,
-                code,
-                instruction: handle.instruction!,
-              });
-            });
-          });
+        const coding = testType.type?.coding || [];
+        const main = coding[0];
+        if (main) {
+          mats.push({ display: main.display || "N/A", code: main.code, system: main.system });
         }
       });
     }
+    this.materials = mats;
 
-    this.handlingInstructions = handlingList;
+    const sectionsMap = new Map<string, HandlingSection>();
+
+    if (data.typeTested) {
+      data.typeTested.forEach((testType) => {
+        if (!testType.handling) return;
+
+        testType.handling.forEach((handle) => {
+          if (!handle.instruction) return;
+
+
+          let title = "N/A";
+          let code: string | undefined = undefined;
+
+          const targetExt = handle.extension?.find((ext) =>
+            typeof ext.url === "string" && ext.url.includes("specimenDefinition-handlingCode")
+          );
+
+          const chosenExt = targetExt || handle.extension?.[0];
+          if (chosenExt) {
+            title = chosenExt.valueCoding?.display || title;
+            code = chosenExt.valueCoding?.code || code;
+          }
+
+          const key = `${title}__${code ?? ""}`;
+          const existing = sectionsMap.get(key);
+          if (existing) {
+            existing.instructions.push(handle.instruction!);
+          } else {
+            sectionsMap.set(key, {
+              title,
+              code,
+              instructions: [handle.instruction!],
+            });
+          }
+        });
+      });
+    }
+
+    this.handlingSections = Array.from(sectionsMap.values());
   }
 }
