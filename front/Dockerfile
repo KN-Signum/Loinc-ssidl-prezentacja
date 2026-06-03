@@ -11,15 +11,12 @@ COPY . .
 
 RUN npm run build
 
-# Production stage - serve static files
-FROM node:lts-alpine
+# Production stage - nginx with API reverse proxy
+FROM nginx:alpine
 
-WORKDIR /app
-
-RUN npm install -g http-server
-
-COPY --from=builder /app/build ./build
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /app/build /usr/share/nginx/html
 
 EXPOSE 5173
 
-CMD ["http-server", "build", "-p", "5173", "--cors"]
+CMD ["nginx", "-g", "daemon off;"]
