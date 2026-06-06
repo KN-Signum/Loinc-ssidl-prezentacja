@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { ObservationDefinition } from "./ObservationDefintion";
+import { BACKEND_BASE_URL } from "../../config/apiBase";
 
-const API_BASE_URL = "http://localhost:5001/knowledge";
+const API_BASE_URL = `${BACKEND_BASE_URL}/knowledge`;
 
 interface UseObservationDefinitionResult {
   data: ObservationDefinition | null;
