@@ -15,6 +15,7 @@ import { useAppStore } from "../../../store/appStore.ts";
 import { LocationDefinition } from "../../../features/locationDefinition/LocationDefinition.ts";
 import { useEffect } from "react";
 import axios from "axios";
+import { BACKEND_BASE_URL } from "../../../config/apiBase";
 
 const Searchbar = () => {
   const {data: laboratories} = useGetLocationDefinitionLB();
@@ -41,7 +42,7 @@ const Searchbar = () => {
       try {
         const healthcareServices = await Promise.all(
           Array.from(labIds).map((id) =>
-            axios.get(`http://localhost:5001/terminology/healthcare-services/location/${id}`)
+            axios.get(`${BACKEND_BASE_URL}/terminology/healthcare-services/location/${id}`)
           )
         );
         console.log(labIds)

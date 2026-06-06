@@ -5,6 +5,10 @@ export interface ObservationDefinitionResource {
   code?: {
     coding?: FhirCoding[];
   };
+  method?: {
+    coding?: FhirCoding[];
+  };
+  permittedUnit?: FhirCoding[];
 }
 export interface FhirCoding {
   system?: string;

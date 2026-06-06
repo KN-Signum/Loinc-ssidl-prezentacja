@@ -1,8 +1,7 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { LocationDefinition } from "./LocationDefinition";
-
-const API_URL23 = "http://localhost:5001/definitions";
+import { BACKEND_BASE_URL } from "../../config/apiBase";
 
 export const useGetLocationDefinitionLB = () => {
   const [data, setData] = useState<LocationDefinition[]>([]);
@@ -13,7 +12,7 @@ export const useGetLocationDefinitionLB = () => {
     const fetchLocations = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`http://localhost:5001/terminology/laboratories`);
+        const response = await axios.get(`${BACKEND_BASE_URL}/terminology/laboratories`);
         setData(response.data);
         console.log(response.data)
       } catch (error) {
@@ -35,7 +34,7 @@ export const useGetLocationDefinitionPP = () => {
     const fetchLocations = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`http://localhost:5001/terminology/intake`);
+        const response = await axios.get(`${BACKEND_BASE_URL}/terminology/intake`);
         setData(response.data);
         console.log(response.data)
       } catch (error) {
