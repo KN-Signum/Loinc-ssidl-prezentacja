@@ -24,6 +24,7 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "../../components/ui/accordion";
+import { ActivityGoalSection } from "../../features/activityDefinition/ActivityGoalSection";
 import { CitationItem } from "../../features/citations/types";
 import { useGetAgeUnits } from "../../features/citations/Api";
 import { ObservationDefinitionListItem } from "../../features/observationDefinition/Api";
@@ -346,6 +347,10 @@ export const DetailsModal: React.FC<DetailsModalProps> = ({
                     )}
                   </section>
                 )}
+
+                <ActivityGoalSection
+                  activityDefinitionData={activityDefinitionData}
+                />
 
                 {specimenData && (
                   <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
