@@ -3,6 +3,7 @@ import {
   activityDefinitionByIdController,
   activityDefinitionByTitleController,
   citationsController,
+  conditionDefinitionsByActivityDefinitionIdController,
   conditionDefinitionByIdController,
   locationController,
   observationDefinitionByObsIdController,
@@ -22,6 +23,11 @@ router.get("/observation-definitions/:obsId", observationDefinitionByObsIdContro
 router.get("/observation-definitions-list/:id", observationDefinitionListController);
 
 router.get("/specimen-definitions/:id", specimenDefinitionByIdController);
+
+router.get(
+  "/activity-definitions/:id/condition-definitions",
+  conditionDefinitionsByActivityDefinitionIdController,
+);
 
 router.get("/condition-definitions/:id", conditionDefinitionByIdController);
 
