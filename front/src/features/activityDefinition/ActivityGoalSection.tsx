@@ -2,11 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { CheckSquare, Loader2, Target } from "lucide-react";
 import { Badge } from "../../components/ui/badge";
+import { BACKEND_BASE_URL } from "../../config/apiBase";
 
 const GOAL_EXTENSION_URL =
   "http://loinc-ssidl.umed.pl/fhir/ig/ssidl/StructureDefinition/activityDefinition-reasonReference";
 
-const API_BASE_URL = "http://localhost:5001/knowledge";
+const API_BASE_URL = `${BACKEND_BASE_URL}/knowledge`;
 
 interface ConditionGoalItem {
   id: string;
