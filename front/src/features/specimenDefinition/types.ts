@@ -26,4 +26,5 @@ export interface SpecimenDefinitionResource {
   };
   patientPreparation?: { text: string }[];
   typeTested?: SpecimenTypeTested[];
+  specimenRequirementComment?: string | null;
 }

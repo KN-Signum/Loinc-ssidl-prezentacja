@@ -6,7 +6,10 @@ import {
 } from "../services/fhir-service.js";
 import { getActivityDefinitionsByTitle } from "../services/activity-definition.js";
 import { getConditionsDefinitionsFromActivityDefinition } from "../services/conditions.js";
-import { getSpecimenDefinitionsFromActivityDefinition } from "../services/specimen.js";
+import {
+  getSpecimenDefinitionsFromActivityDefinition,
+  getSpecimenRequirementCommentFromActivityDefinition,
+} from "../services/specimen.js";
 import { getObservationDefinitionsFromActivityDefinition } from "../services/observation.js";
 
 const AGE_UNITS_VALUE_SET_ID = "pl-base-ageUnit-VS";
@@ -119,7 +122,12 @@ export const specimenDefinitionByIdController = async (
       return;
     }
     const result = await fetchFhirResource("SpecimenDefinition", `/${refs[0].id}`);
-    res.status(200).json(result);
+    const specimenRequirementComment =
+      getSpecimenRequirementCommentFromActivityDefinition(activityDefinition);
+    res.status(200).json({
+      ...result,
+      specimenRequirementComment,
+    });
   } catch (error) {
     console.error("Error fetching specimen definition:", error);
     handleFhirError(res, error);

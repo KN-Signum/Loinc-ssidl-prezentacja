@@ -20,6 +20,7 @@ export class SpecimenDefinition {
   patientPreparation: string[];
   materials: MaterialInfo[];
   handlingSections: HandlingSection[];
+  specimenRequirementComment: string | null;
 
   constructor(data: SpecimenDefinitionResource) {
     this.id = data.id;
@@ -31,6 +32,8 @@ export class SpecimenDefinition {
 
     this.patientPreparation = data.patientPreparation?.map((prep) => prep.text) || [];
     
+    this.specimenRequirementComment = data.specimenRequirementComment || null;
+
     const mats: MaterialInfo[] = [];
     if (data.typeTested) {
       data.typeTested.forEach((testType) => {
