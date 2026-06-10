@@ -332,9 +332,7 @@ export const DetailsModal: React.FC<DetailsModalProps> = ({
                     <h4 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-2">
                       Opis
                     </h4>
-                    <p className="text-sm text-slate-700 leading-relaxed">
-                      <MarkdownText>{displayedDescription}</MarkdownText>
-                    </p>
+                    <MarkdownText>{displayedDescription}</MarkdownText>
                     {isDescriptionLong && (
                       <button
                         onClick={() =>
@@ -395,8 +393,10 @@ export const DetailsModal: React.FC<DetailsModalProps> = ({
                         <div>
                           {materials.length > 0 ? (
                             <p className="text-sm text-slate-900 font-medium">
-                              <span className="font-bold">Materiał badany:</span>{' '}
-                              {materials[0].display}{' '}
+                              <span className="font-bold">
+                                Materiał badany:
+                              </span>{" "}
+                              {materials[0].display}{" "}
                               {materials[0].code && (
                                 <span className="text-slate-500">
                                   (kod {materials[0].code})
@@ -432,7 +432,10 @@ export const DetailsModal: React.FC<DetailsModalProps> = ({
                                     {sec.title}
                                   </span>
                                   {sec.code && (
-                                    <Badge variant="outline" className="text-xs font-mono">
+                                    <Badge
+                                      variant="outline"
+                                      className="text-xs font-mono"
+                                    >
                                       {sec.code}
                                     </Badge>
                                   )}
@@ -440,11 +443,16 @@ export const DetailsModal: React.FC<DetailsModalProps> = ({
                               </AccordionTrigger>
                               <AccordionContent>
                                 <ul className="pl-4 list-disc space-y-1">
-                                  {sec.instructions.map((instr: string, i: number) => (
-                                    <li key={i} className="text-sm text-slate-700">
-                                      {instr}
-                                    </li>
-                                  ))}
+                                  {sec.instructions.map(
+                                    (instr: string, i: number) => (
+                                      <li
+                                        key={i}
+                                        className="text-sm text-slate-700"
+                                      >
+                                        {instr}
+                                      </li>
+                                    ),
+                                  )}
                                 </ul>
                               </AccordionContent>
                             </AccordionItem>
@@ -536,12 +544,12 @@ export const DetailsModal: React.FC<DetailsModalProps> = ({
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 border border-blue-100 text-blue-600">
                         <Microscope className="h-5 w-5" />
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <span className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-0.5">
                           Metoda badania
                         </span>
-                        <div className="flex items-center gap-2 text-sm font-medium text-slate-800">
-                          <span className="capitalize">
+                        <div className="flex items-center gap-x-2 text-sm font-medium text-slate-800">
+                          <span className="capitalize wrap-break-words">
                             {observationData.methodDisplay}
                           </span>
                           {observationData?.methodCode && (
@@ -561,12 +569,14 @@ export const DetailsModal: React.FC<DetailsModalProps> = ({
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-50 border border-emerald-100 text-emerald-600">
                         <Ruler className="h-5 w-5" />
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <span className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-0.5">
                           Jednostka wyniku
                         </span>
-                        <div className="flex items-center gap-2 text-sm font-medium text-slate-800">
-                          <span>{observationData.permittedUnitDisplay}</span>
+                        <div className="flex items-center gap-x-2 text-sm font-medium text-slate-800">
+                          <span className="wrap-break-words">
+                            {observationData.permittedUnitDisplay}
+                          </span>
                           {observationData?.permittedUnitCode && (
                             <>
                               <span className="text-slate-300">|</span>
@@ -746,11 +756,9 @@ export const DetailsModal: React.FC<DetailsModalProps> = ({
                                   <AccordionContent>
                                     <div className="space-y-3 pl-1">
                                       {item.citation?.description && (
-                                        <p className="text-sm text-slate-700 leading-relaxed">
-                                          <MarkdownText>
-                                            {item.citation.description}
-                                          </MarkdownText>
-                                        </p>
+                                        <MarkdownText>
+                                          {item.citation.description}
+                                        </MarkdownText>
                                       )}
                                       <div className="pt-1">
                                         {item.citation?.citedArtifact
