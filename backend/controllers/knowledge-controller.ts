@@ -5,6 +5,7 @@ import {
   FhirServiceError,
 } from "../services/fhir-service.js";
 import { getActivityDefinitionsByTitle } from "../services/activity-definition.js";
+import { getConditionsDefinitionsFromActivityDefinition } from "../services/conditions.js";
 import {
   getSpecimenDefinitionsFromActivityDefinition,
   getSpecimenRequirementCommentFromActivityDefinition,
@@ -129,6 +130,52 @@ export const specimenDefinitionByIdController = async (
     });
   } catch (error) {
     console.error("Error fetching specimen definition:", error);
+    handleFhirError(res, error);
+  }
+};
+
+export const conditionDefinitionsByActivityDefinitionIdController = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const activityDefinition = await fetchFhirResource(
+      "ActivityDefinition",
+      `/${id}`,
+    );
+    const refs = getConditionsDefinitionsFromActivityDefinition(activityDefinition);
+
+    if (refs.length === 0) {
+      res.status(200).json([]);
+      return;
+    }
+
+    const results = await Promise.all(
+      refs.map(async (ref) => {
+        try {
+          const conditionDefinition = await fetchFhirResource(
+            ref.resourceType,
+            `/${ref.id}`,
+          );
+
+          return {
+            id: conditionDefinition.id,
+            description: conditionDefinition.description ?? "",
+          };
+        } catch (error) {
+          console.error(`Error fetching ConditionDefinition ${ref.id}:`, error);
+          return null;
+        }
+      }),
+    );
+
+    res.status(200).json(results.filter(Boolean));
+  } catch (error) {
+    console.error(
+      "Error fetching condition definitions by activity definition:",
+      error,
+    );
     handleFhirError(res, error);
   }
 };

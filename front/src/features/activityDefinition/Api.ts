@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { ActivityDefinition } from "./ActivityDefinition";
+import { BACKEND_BASE_URL } from "../../config/apiBase";
 
-const API_BASE_URL = "http://localhost:5001/knowledge";
+const API_BASE_URL = `${BACKEND_BASE_URL}/knowledge`;
 
 function classifyAxiosError(err: any): string {
   if (!err.response) {

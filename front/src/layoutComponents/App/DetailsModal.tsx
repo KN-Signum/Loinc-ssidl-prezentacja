@@ -8,6 +8,8 @@ import {
   BookOpen,
   ChevronLeft,
   ChevronRight,
+  Microscope,
+  Ruler,
 } from "lucide-react";
 import {
   Dialog,
@@ -22,10 +24,12 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "../../components/ui/accordion";
+import { ActivityGoalSection } from "../../features/activityDefinition/ActivityGoalSection";
 import { CitationItem } from "../../features/citations/types";
 import { useGetAgeUnits } from "../../features/citations/Api";
 import { ObservationDefinitionListItem } from "../../features/observationDefinition/Api";
 import { useAppStore } from "../../store/appStore";
+import { MarkdownText } from "../../components/ui/MarkdownText";
 
 export interface DetailsModalProps {
   specimenData: any;
@@ -250,6 +254,8 @@ export const DetailsModal: React.FC<DetailsModalProps> = ({
     : null;
 
   const handlingInstructions = specimenData?.handlingInstructions ?? [];
+  const materials = specimenData?.materials ?? [];
+  const handlingSections = specimenData?.handlingSections ?? [];
 
   const filterButtons: { label: string; value: GenderFilter }[] = [
     { label: "Wszyscy", value: "all" },
@@ -289,8 +295,25 @@ export const DetailsModal: React.FC<DetailsModalProps> = ({
                     className="w-fit text-blue-700 border-blue-200 bg-blue-50 font-mono"
                   >
                     LOINC:{" "}
-                    {activityDefinitionData?.code?.coding?.[0]?.code || "N/A"}
+                    {activityDefinitionData?.code?.coding?.find(
+                      (c: any) => c.system === "http://loinc.org",
+                    )?.code ||
+                      activityDefinitionData?.code?.coding?.[0]?.code ||
+                      "N/A"}
                   </Badge>
+                  {(() => {
+                    const icd9 = activityDefinitionData?.code?.coding?.find(
+                      (c: any) => c.system?.includes("pl-icd9plServiceCode-CS"),
+                    );
+                    return icd9 ? (
+                      <Badge
+                        variant="outline"
+                        className="w-fit text-violet-700 border-violet-200 bg-violet-50 font-mono"
+                      >
+                        ICD-9: {icd9.code}
+                      </Badge>
+                    ) : null;
+                  })()}
                   {nfzCodes.map((nfz, idx) => (
                     <Badge
                       key={idx}
@@ -310,7 +333,7 @@ export const DetailsModal: React.FC<DetailsModalProps> = ({
                       Opis
                     </h4>
                     <p className="text-sm text-slate-700 leading-relaxed">
-                      {displayedDescription}
+                      <MarkdownText>{displayedDescription}</MarkdownText>
                     </p>
                     {isDescriptionLong && (
                       <button
@@ -324,6 +347,10 @@ export const DetailsModal: React.FC<DetailsModalProps> = ({
                     )}
                   </section>
                 )}
+
+                <ActivityGoalSection
+                  activityDefinitionData={activityDefinitionData}
+                />
 
                 {specimenData && (
                   <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
@@ -354,84 +381,77 @@ export const DetailsModal: React.FC<DetailsModalProps> = ({
                 )}
 
                 {specimenData && (
-                  <section className="rounded-lg border border-slate-200 bg-slate-50/50 p-4">
-                    <h4 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">
-                      <FlaskConical className="h-4 w-4" />
-                      Specyfikacja Materiału
-                    </h4>
+                  <>
+                    <section className="rounded-lg border border-slate-200 bg-slate-50/50 p-4">
+                      <h4 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">
+                        <FlaskConical className="h-4 w-4" />
+                        Materiał badany
+                      </h4>
 
-                    <div className="space-y-4">
-                      <div className="flex items-start gap-3">
+                      <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white border border-slate-200 text-blue-600 shadow-sm">
                           <TestTube2 className="h-5 w-5" />
                         </div>
                         <div>
-                          <span className="block text-xs font-semibold text-slate-500">
-                            Typ Materiału
-                          </span>
-                          <div className="flex items-center gap-2 text-sm font-medium text-slate-900">
-                            <p className="uppercase">
-                              {specimenData.display?.toLowerCase()}
+                          {materials.length > 0 ? (
+                            <p className="text-sm text-slate-900 font-medium">
+                              <span className="font-bold">Materiał badany:</span>{' '}
+                              {materials[0].display}{' '}
+                              {materials[0].code && (
+                                <span className="text-slate-500">
+                                  (kod {materials[0].code})
+                                </span>
+                              )}
                             </p>
-                            <p className="text-slate-300">|</p>
-                            <p className="text-slate-500">
-                              KOD: {specimenData?.collectionCode || "N/A"}
+                          ) : (
+                            <p className="text-sm text-slate-500 italic">
+                              Brak informacji o materiale.
                             </p>
-                          </div>
+                          )}
                         </div>
                       </div>
+                    </section>
 
-                      {handlingInstructions.length > 0 && (
-                        <div className="pt-2 border-t border-slate-200 mt-2">
-                          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-2">
-                            Instrukcje Obsługi ({handlingInstructions.length})
-                          </span>
-                          <div className="max-h-64 overflow-y-auto scrollbar-hide">
-                            <Accordion
-                              type="single"
-                              collapsible
-                              className="w-full"
+                    {handlingSections.length > 0 && (
+                      <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                        <h4 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">
+                          <Truck className="h-4 w-4" />
+                          Czynniki przedanalityczne
+                        </h4>
+
+                        <Accordion type="single" collapsible className="w-full">
+                          {handlingSections.map((sec: any, idx: number) => (
+                            <AccordionItem
+                              key={idx}
+                              value={`hs-${idx}`}
+                              className="border-b border-slate-200"
                             >
-                              {handlingInstructions.map(
-                                (
-                                  item: {
-                                    displayName: string;
-                                    code: string;
-                                    instruction: string;
-                                  },
-                                  idx: number,
-                                ) => (
-                                  <AccordionItem
-                                    key={idx}
-                                    value={`handling-${idx}`}
-                                    className="border-b border-slate-200"
-                                  >
-                                    <AccordionTrigger className="py-3 hover:no-underline">
-                                      <div className="flex items-center gap-2">
-                                        <Truck className="h-4 w-4 text-blue-600 shrink-0" />
-                                        <span className="text-sm font-semibold text-slate-900">
-                                          {item.displayName}
-                                        </span>
-                                        <Badge
-                                          variant="outline"
-                                          className="text-xs font-mono"
-                                        >
-                                          {item.code}
-                                        </Badge>
-                                      </div>
-                                    </AccordionTrigger>
-                                    <AccordionContent>
-                                      <p className="text-sm text-slate-700 leading-relaxed pl-6">
-                                        {item.instruction}
-                                      </p>
-                                    </AccordionContent>
-                                  </AccordionItem>
-                                ),
-                              )}
-                            </Accordion>
-                          </div>
-                        </div>
-                      )}
+                              <AccordionTrigger className="py-3 hover:no-underline">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-semibold text-slate-900">
+                                    {sec.title}
+                                  </span>
+                                  {sec.code && (
+                                    <Badge variant="outline" className="text-xs font-mono">
+                                      {sec.code}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </AccordionTrigger>
+                              <AccordionContent>
+                                <ul className="pl-4 list-disc space-y-1">
+                                  {sec.instructions.map((instr: string, i: number) => (
+                                    <li key={i} className="text-sm text-slate-700">
+                                      {instr}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </AccordionContent>
+                            </AccordionItem>
+                          ))}
+                        </Accordion>
+                      </section>
+                    )}
 
                       {specimenData.specimenRequirementComment && (
                         <div className="pt-2 border-t border-slate-200 mt-2">
@@ -443,8 +463,7 @@ export const DetailsModal: React.FC<DetailsModalProps> = ({
                           </p>
                         </div>
                       )}
-                    </div>
-                  </section>
+                  </>
                 )}
 
                 <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
@@ -520,6 +539,59 @@ export const DetailsModal: React.FC<DetailsModalProps> = ({
             </DialogHeader>
 
             <div className="space-y-8">
+              {(observationData?.methodDisplay ||
+                observationData?.permittedUnitDisplay) && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {observationData?.methodDisplay && (
+                    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm flex items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 border border-blue-100 text-blue-600">
+                        <Microscope className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <span className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-0.5">
+                          Metoda badania
+                        </span>
+                        <div className="flex items-center gap-2 text-sm font-medium text-slate-800">
+                          <span className="capitalize">
+                            {observationData.methodDisplay}
+                          </span>
+                          {observationData?.methodCode && (
+                            <>
+                              <span className="text-slate-300">|</span>
+                              <span className="font-mono text-slate-500">
+                                {observationData.methodCode}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {observationData?.permittedUnitDisplay && (
+                    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm flex items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-50 border border-emerald-100 text-emerald-600">
+                        <Ruler className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <span className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-0.5">
+                          Jednostka wyniku
+                        </span>
+                        <div className="flex items-center gap-2 text-sm font-medium text-slate-800">
+                          <span>{observationData.permittedUnitDisplay}</span>
+                          {observationData?.permittedUnitCode && (
+                            <>
+                              <span className="text-slate-300">|</span>
+                              <span className="font-mono text-slate-500">
+                                {observationData.permittedUnitCode}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
               {citationsData && (
                 <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
@@ -686,7 +758,9 @@ export const DetailsModal: React.FC<DetailsModalProps> = ({
                                     <div className="space-y-3 pl-1">
                                       {item.citation?.description && (
                                         <p className="text-sm text-slate-700 leading-relaxed">
-                                          {item.citation.description}
+                                          <MarkdownText>
+                                            {item.citation.description}
+                                          </MarkdownText>
                                         </p>
                                       )}
                                       <div className="pt-1">
