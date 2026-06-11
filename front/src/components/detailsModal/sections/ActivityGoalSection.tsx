@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { CheckSquare, Loader2, Target } from "lucide-react";
-import { Badge } from "../../components/ui/badge";
-import { BACKEND_BASE_URL } from "../../config/apiBase";
+import { Badge } from "../../ui/badge";
+import { BACKEND_BASE_URL } from "../../../config/apiBase";
+import { DetailSection, SectionTitle } from "../primitives";
 
 const GOAL_EXTENSION_URL =
   "http://loinc-ssidl.umed.pl/fhir/ig/ssidl/StructureDefinition/activityDefinition-reasonReference";
@@ -15,6 +16,7 @@ interface ConditionGoalItem {
 }
 
 type ActivityDefinitionLike = {
+  id?: string;
   extension?: Array<{
     url?: string;
     valueCanonical?: string;
@@ -31,11 +33,15 @@ function extractConditionId(valueCanonical: string): string | null {
   return segments.length > 0 ? segments[segments.length - 1] : null;
 }
 
-function uniqueConditionIds(activityDefinitionData: ActivityDefinitionLike | null | undefined): string[] {
+function uniqueConditionIds(
+  activityDefinitionData: ActivityDefinitionLike | null | undefined,
+): string[] {
   const ids = (activityDefinitionData?.extension ?? [])
     .filter((extension) => extension.url === GOAL_EXTENSION_URL)
     .map((extension) => extension.valueCanonical)
-    .filter((valueCanonical): valueCanonical is string => Boolean(valueCanonical))
+    .filter((valueCanonical): valueCanonical is string =>
+      Boolean(valueCanonical),
+    )
     .map(extractConditionId)
     .filter((id): id is string => Boolean(id));
 
@@ -104,14 +110,13 @@ export const ActivityGoalSection: React.FC<{
   }
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-      <h4 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">
-        <Target className="h-4 w-4" />
+    <DetailSection>
+      <SectionTitle icon={Target} className="mb-4">
         Cel badania
         <Badge variant="outline" className="ml-1 text-xs">
           {conditionIds.length}
         </Badge>
-      </h4>
+      </SectionTitle>
 
       <ul className="space-y-2">
         {loading && (
@@ -126,14 +131,18 @@ export const ActivityGoalSection: React.FC<{
             <span>Nie udało się pobrać celu badania.</span>
           </li>
         )}
-        {!loading && !error &&
+        {!loading &&
+          !error &&
           goals.map((goal) => (
-            <li key={goal.id} className="flex items-start gap-2 text-sm text-slate-700">
+            <li
+              key={goal.id}
+              className="flex items-start gap-2 text-sm text-slate-700"
+            >
               <CheckSquare className="mt-0.5 h-4 w-4 text-emerald-500 shrink-0" />
               <span>{goal.description || "Brak opisu celu badania."}</span>
             </li>
           ))}
       </ul>
-    </section>
+    </DetailSection>
   );
 };
