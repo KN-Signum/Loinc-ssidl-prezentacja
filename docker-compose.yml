@@ -1,27 +1,76 @@
 services:
-  backend:
+  # ---------------------------------------------
+  # DEVELOPMENT PROFILE
+  # Run with: docker compose up
+  # ---------------------------------------------
+  backend-dev:
     build:
       context: ./backend
-      dockerfile: Dockerfile
-    container_name: loinc-ssidl-backend
+      target: dev
+    container_name: loinc-ssidl-backend-dev
+    profiles: ["dev", ""]
     ports:
       - "5001:5001"
+    environment:
+      - NODE_ENV=development
+      - PORT=5001
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    restart: unless-stopped
+
+  frontend-dev:
+    build:
+      context: ./front
+      target: dev
+    container_name: loinc-ssidl-frontend-dev
+    profiles: ["dev", ""]
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_PROXY_TARGET=http://backend-dev:5001
+    volumes:
+      - ./front:/app
+      - /app/node_modules
+    depends_on:
+      - backend-dev
+    restart: unless-stopped
+
+  # ---------------------------------------------
+  # PRODUCTION PROFILE
+  # Run with: docker compose --profile prod up -d
+  # Access at: http://172.104.143.209:5173
+  # ---------------------------------------------
+  backend-prod:
+    build:
+      context: ./backend
+      target: prod
+    container_name: loinc-ssidl-backend-prod
+    profiles: ["prod"]
     environment:
       - NODE_ENV=production
       - PORT=5001
     restart: unless-stopped
 
-  frontend:
+  frontend-prod:
     build:
       context: ./front
-      dockerfile: Dockerfile
-    container_name: loinc-ssidl-frontend
-    ports:
-      - "5173:5173"
+      target: prod
+    container_name: loinc-ssidl-frontend-prod
+    profiles: ["prod"]
     depends_on:
-      - backend
+      - backend-prod
     restart: unless-stopped
 
-volumes:
-  backend_node_modules:
-  frontend_node_modules:
+  caddy-prod:
+    image: caddy:alpine
+    container_name: loinc-ssidl-caddy
+    profiles: ["prod"]
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+    depends_on:
+      - frontend-prod
+      - backend-prod
+    restart: unless-stopped

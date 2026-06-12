@@ -1,0 +1,8 @@
+:5173 {
+	handle_path /api/* {
+		reverse_proxy backend-prod:5001
+	}
+	handle {
+		reverse_proxy frontend-prod:5173
+	}
+}

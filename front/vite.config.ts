@@ -6,6 +6,18 @@
 
   export default defineConfig({
     plugins: [react(), tailwindcss()],
+    server: {
+      port: 3000,
+      open: false, // cannot open browser inside Docker
+      proxy: {
+        '/api': {
+          target: process.env.VITE_PROXY_TARGET || 'http://localhost:5001',
+          changeOrigin: true,
+          secure: false,
+          rewrite: (path) => path.replace(/^\/api/, '')
+        }
+      }
+    },
     resolve: {
       extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
       alias: {
@@ -52,10 +64,6 @@
     },
     build: {
       target: 'esnext',
-      outDir: 'build',
-    },
-    server: {
-      port: 3000,
-      open: true,
+      outDir: 'dist',
     },
   });
