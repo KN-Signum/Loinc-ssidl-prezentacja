@@ -7,8 +7,8 @@ import {
   ActivityGoalSection,
   DescriptionSection,
   PatientPreparationSection,
-  SpecimenMaterialSection,
-  PreAnalyticalFactorsSection,
+  CollectedMaterialSection,
+  TestedMaterialsSection,
   SpecimenCommentSection,
   ParametersSection,
 } from "../../../components/detailsModal";
@@ -45,10 +45,8 @@ export const ActivityDetailsView: React.FC<ActivityDetailsViewProps> = ({
       {specimenData && (
         <>
           <PatientPreparationSection items={specimenData.patientPreparation} />
-          <SpecimenMaterialSection materials={specimenData.materials} />
-          <PreAnalyticalFactorsSection
-            sections={specimenData.handlingSections}
-          />
+          <CollectedMaterialSection material={specimenData.typeCollected} />
+          <TestedMaterialsSection materials={specimenData.testedMaterials} />
           <SpecimenCommentSection
             comment={specimenData.specimenRequirementComment}
           />

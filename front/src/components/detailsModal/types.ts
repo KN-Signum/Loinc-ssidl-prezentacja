@@ -15,6 +15,12 @@ export enum GenderFilter {
   Female = "female",
 }
 
+export enum AgeFilter {
+  All = "all",
+  Adults = "adults",
+  Children = "children",
+}
+
 export enum NfzCode {
   Guaranteed = "NFZSG",
   Contracted = "NFZPK",
@@ -40,6 +46,12 @@ export const GENDER_FILTER_BUTTONS: { label: string; value: GenderFilter }[] = [
   { label: "Wszyscy", value: GenderFilter.All },
   { label: "Mężczyzna", value: GenderFilter.Male },
   { label: "Kobieta", value: GenderFilter.Female },
+];
+
+export const AGE_FILTER_BUTTONS: { label: string; value: AgeFilter }[] = [
+  { label: "Wszyscy", value: AgeFilter.All },
+  { label: "Dorośli", value: AgeFilter.Adults },
+  { label: "Dzieci", value: AgeFilter.Children },
 ];
 
 export const DESCRIPTION_CHAR_LIMIT = 300;

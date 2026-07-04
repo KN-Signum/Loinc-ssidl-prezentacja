@@ -14,16 +14,20 @@ export interface SpecimenHandling {
   instruction?: string;
 }
 
+export interface FhirCodeableConcept {
+  coding?: FhirCoding[];
+  text?: string;
+}
+
 export interface SpecimenTypeTested {
+  type?: FhirCodeableConcept;
   handling?: SpecimenHandling[];
 }
 
 export interface SpecimenDefinitionResource {
   resourceType: "SpecimenDefinition";
   id: string;
-  typeCollected?: {
-    coding?: FhirCoding[];
-  };
+  typeCollected?: FhirCodeableConcept;
   patientPreparation?: { text: string }[];
   typeTested?: SpecimenTypeTested[];
   specimenRequirementComment?: string | null;

@@ -8,22 +8,22 @@ const Header = () => {
   return (
     <header className="sticky top-0 z-20 w-full border-b bg-white px-6 py-4 shadow-sm">
       <div className="mx-auto flex max-w-7xl items-center">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 text-white shadow-md">
-              <Stethoscope className="h-6 w-6" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight text-slate-900">
-                Aplikacja prezentacyjna SSIDL
-              </h1>
-            </div>
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 text-white shadow-md">
+            <Stethoscope className="h-6 w-6" />
           </div>
-          <div className="flex-1 flex justify-center min-w-0 px-2">
-            {isPreviewMode && <BaseSwitcher />}
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-slate-900">
+              Aplikacja prezentacyjna SSIDL
+            </h1>
           </div>
-          <ShowSettings />
         </div>
-      </header>
+        <div className="flex-1 flex justify-center min-w-0 px-2">
+          {isPreviewMode && <BaseSwitcher />}
+        </div>
+        <ShowSettings />
+      </div>
+    </header>
   );
-}
+};
 export default Header;
