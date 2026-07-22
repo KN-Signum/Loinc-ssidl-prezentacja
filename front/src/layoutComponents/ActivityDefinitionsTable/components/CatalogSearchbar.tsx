@@ -1,4 +1,4 @@
-import { Building2, Filter, FlaskConical, Search } from "lucide-react";
+import { Building2, FlaskConical, Search, X } from "lucide-react";
 import { Card, CardContent } from "../../../components/ui/card";
 import { Input } from "../../../components/ui/input";
 import {
@@ -8,7 +8,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../../components/ui/select";
-import { Button } from "../../../components/ui/button";
 import { useGetLocationDefinitionLB, useGetLocationDefinitionPP } from "../../../features/locationDefinition/Api.ts";
 import { useTableFiltering } from "../../../hooks/useTableFiltering.ts";
 import { useAppStore } from "../../../store/appStore.ts";
@@ -66,10 +65,24 @@ const Searchbar = () => {
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
               <Input
                 placeholder="Nazwa badania, kod LOINC..."
-                className="pl-9"
+                className="pl-9 pr-9"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
+              {searchTerm && (
+                <button
+                  type="button"
+                  aria-label="Wyczyść wyszukiwanie"
+                  onClick={() => {
+                    setSearchTerm("");
+                    setSelectedLab("all");
+                    setSelectedSpecimen("all");
+                  }}
+                  className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
           </div>
 
@@ -104,19 +117,6 @@ const Searchbar = () => {
               </SelectContent>
             </Select>
           </div>
-
-          <Button
-            variant="outline"
-            className="shrink-0"
-            onClick={() => {
-              setSearchTerm("");
-              setSelectedLab("all");
-              setSelectedSpecimen("all");
-            }}
-          >
-            <Filter className="mr-2 h-4 w-4" />
-            Reset
-          </Button>
         </div>
       </CardContent>
     </Card>

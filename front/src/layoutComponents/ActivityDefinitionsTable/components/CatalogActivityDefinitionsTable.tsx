@@ -1,4 +1,4 @@
-import { Activity, Info, TestTube2 } from "lucide-react";
+import { Activity, TestTube2 } from "lucide-react";
 import { Badge } from "../../../components/ui/badge";
 import { Card } from "../../../components/ui/card";
 import { Checkbox } from "../../../components/ui/checkbox";
@@ -10,7 +10,6 @@ import {
   TableHeader,
   TableRow,
 } from "../../../components/ui/table";
-import { Button } from "../../../components/ui/button";
 import { ActivityDefinition } from "../../../features/activityDefinition/ActivityDefinition";
 import { useAppStore } from "../../../store/appStore";
 import { useTableFiltering } from "../../../hooks/useTableFiltering";
@@ -60,25 +59,24 @@ const ActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
               <TableHead className="w-[180px]">Kod (LOINC/Local)</TableHead>
               <TableHead>Laboratorium</TableHead>
               <TableHead className="w-[120px]">Status</TableHead>
-              <TableHead className="text-right">Baza Wiedzy</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {props.listLoading ? (
               <TableRow>
                 <TableCell
-                  colSpan={6}
+                  colSpan={5}
                   className="h-32 text-center text-slate-500"
                 >
                   Ładowanie definicji...
                 </TableCell>
               </TableRow>
             ) : props.listError ? (
-              <TableErrorState error={props.listError} colSpan={6} />
+              <TableErrorState error={props.listError} colSpan={5} />
             ) : filteredData.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={6}
+                  colSpan={5}
                   className="h-32 text-center text-slate-500"
                 >
                   Nie znaleziono badań.
@@ -92,13 +90,17 @@ const ActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
                 return (
                   <TableRow
                     key={item.id}
-                    className={`group transition-colors ${
+                    onClick={() => setDetailsId(item.id)}
+                    className={`group cursor-pointer transition-colors ${
                       isSelected
                         ? "bg-blue-50/50 hover:bg-blue-50"
                         : "hover:bg-slate-50/50"
                     }`}
                   >
-                    <TableCell className="text-center">
+                    <TableCell
+                      className="text-center"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <Checkbox
                         checked={isSelected}
                         onCheckedChange={() => toggleItem(item.id)}
@@ -135,18 +137,6 @@ const ActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
 
                     <TableCell className="align-middle">
                       {getStatusBadge(item.status || "active")}
-                    </TableCell>
-
-                    <TableCell className="text-right align-middle">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setDetailsId(item.id)}
-                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                      >
-                        <Info className="mr-2 h-4 w-4" />
-                        Szczegóły
-                      </Button>
                     </TableCell>
                   </TableRow>
                 );
