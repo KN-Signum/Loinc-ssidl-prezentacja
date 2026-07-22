@@ -3,6 +3,8 @@ import { BookOpen, ChevronDown } from "lucide-react";
 import { MarkdownText } from "../../ui/MarkdownText";
 import { CitationItem } from "../../../features/citations/types";
 import {
+  AgeFilter,
+  AGE_FILTER_BUTTONS,
   CitationsData,
   GenderFilter,
   GENDER_FILTER_BUTTONS,
@@ -16,13 +18,50 @@ import {
 } from "../utils";
 import { DetailSection, MutedText, SectionTitle } from "../primitives";
 
+const FilterSwitcher = <T extends string>({
+  buttons,
+  value,
+  onChange,
+}: {
+  buttons: { label: string; value: T }[];
+  value: T;
+  onChange: (value: T) => void;
+}) => (
+  <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+    {buttons.map((btn) => (
+      <button
+        key={btn.value}
+        onClick={() => onChange(btn.value)}
+        className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+          value === btn.value
+            ? "bg-white text-slate-900 shadow-sm"
+            : "text-slate-500 hover:text-slate-700"
+        }`}
+      >
+        {btn.label}
+      </button>
+    ))}
+  </div>
+);
+
+const hasAgeInfo = (item: CitationItem): boolean =>
+  item.age?.low?.value !== undefined || item.age?.high?.value !== undefined;
+
 const ReferenceRangeRow: React.FC<{
   item: CitationItem;
   ageUnits: Record<string, string>;
   showGenderColumn: boolean;
+  showAgeColumn: boolean;
   isExpanded: boolean;
   onToggle: () => void;
-}> = ({ item, ageUnits, showGenderColumn, isExpanded, onToggle }) => {
+}> = ({
+  item,
+  ageUnits,
+  showGenderColumn,
+  showAgeColumn,
+  isExpanded,
+  onToggle,
+}) => {
   const rangeSummary = formatBoundedSummary(
     formatRangeValue(item.range?.low?.value),
     formatRangeValue(item.range?.high?.value),
@@ -36,9 +75,10 @@ const ReferenceRangeRow: React.FC<{
     ageUnits[ageUnitCode] || ageUnitCode,
   );
 
+  const description = item.citation?.description;
   const sourceUrl = item.citation?.citedArtifact?.webLocation?.[0]?.url;
-  const hasDetails = Boolean(item.citation?.description || sourceUrl);
-  const colSpan = showGenderColumn ? 4 : 3;
+  const hasDetails = Boolean(description || sourceUrl);
+  const colSpan = 2 + (showGenderColumn ? 1 : 0) + (showAgeColumn ? 1 : 0);
 
   return (
     <>
@@ -48,17 +88,19 @@ const ReferenceRangeRow: React.FC<{
           hasDetails ? "cursor-pointer hover:bg-slate-50" : ""
         }`}
       >
-        <td className="py-2.5 pr-4 font-medium text-slate-900 whitespace-nowrap">
-          {rangeSummary || "—"}
-        </td>
-        <td className="py-2.5 pr-4 text-slate-700 whitespace-nowrap">
-          {ageSummary || "—"}
-        </td>
         {showGenderColumn && (
           <td className="py-2.5 pr-4 text-slate-700 whitespace-nowrap">
             {item.gender ? (genderLabel[item.gender] ?? item.gender) : "—"}
           </td>
         )}
+        {showAgeColumn && (
+          <td className="py-2.5 pr-4 text-slate-700 whitespace-nowrap">
+            {ageSummary || "—"}
+          </td>
+        )}
+        <td className="py-2.5 pr-4 font-medium text-slate-900 whitespace-nowrap">
+          {rangeSummary || "—"}
+        </td>
         <td className="py-2.5 w-8 text-right">
           {hasDetails && (
             <ChevronDown
@@ -72,24 +114,35 @@ const ReferenceRangeRow: React.FC<{
       {isExpanded && hasDetails && (
         <tr className="border-b border-slate-100">
           <td colSpan={colSpan} className="py-3 px-2 bg-slate-50/50">
-            <div className="space-y-3">
-              {item.citation?.description && (
-                <MarkdownText>{item.citation.description}</MarkdownText>
-              )}
-              {sourceUrl ? (
+            {description ? (
+              sourceUrl ? (
                 <a
                   href={sourceUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                  className="group flex items-start gap-2"
                 >
-                  <BookOpen className="h-4 w-4 shrink-0" />
-                  <span className="break-all">{sourceUrl}</span>
+                  <BookOpen className="h-4 w-4 shrink-0 mt-0.5 text-blue-600 group-hover:text-blue-800" />
+                  <MarkdownText className="[&_p]:text-blue-600 group-hover:[&_p]:text-blue-800 group-hover:[&_p]:underline">
+                    {description}
+                  </MarkdownText>
                 </a>
               ) : (
-                <p className="text-sm text-slate-400 italic">Brak źródła</p>
-              )}
-            </div>
+                <MarkdownText>{description}</MarkdownText>
+              )
+            ) : sourceUrl ? (
+              <a
+                href={sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 hover:underline"
+              >
+                <BookOpen className="h-4 w-4 shrink-0" />
+                <span className="break-all">{sourceUrl}</span>
+              </a>
+            ) : (
+              <p className="text-sm text-slate-400 italic">Brak źródła</p>
+            )}
           </td>
         </tr>
       )}
@@ -102,15 +155,15 @@ export const ReferenceRangesSection: React.FC<{
   ageUnits: Record<string, string>;
   genderFilter: GenderFilter;
   onGenderFilterChange: (filter: GenderFilter) => void;
-  showChildren: boolean;
-  onToggleShowChildren: () => void;
+  ageFilter: AgeFilter;
+  onAgeFilterChange: (filter: AgeFilter) => void;
 }> = ({
   citationsData,
   ageUnits,
   genderFilter,
   onGenderFilterChange,
-  showChildren,
-  onToggleShowChildren,
+  ageFilter,
+  onAgeFilterChange,
 }) => {
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
 
@@ -119,20 +172,25 @@ export const ReferenceRangesSection: React.FC<{
     onGenderFilterChange(filter);
   };
 
-  const handleToggleShowChildren = () => {
+  const handleAgeFilterChange = (filter: AgeFilter) => {
     setExpandedRow(null);
-    onToggleShowChildren();
+    onAgeFilterChange(filter);
   };
 
   if (!citationsData) return null;
 
   const citationsArray = Array.isArray(citationsData) ? citationsData : null;
+
   const hasGenderedData = citationsArray?.some((item) => item.gender) ?? false;
   const availableGenders = citationsArray
     ? [...new Set(citationsArray.map((item) => item.gender).filter(Boolean))]
     : [];
   const showGenderFilter = hasGenderedData && availableGenders.length > 1;
+
+  const hasAgeData = citationsArray?.some(hasAgeInfo) ?? false;
   const hasChildData = citationsArray?.some(isChildItem) ?? false;
+  const hasAdultData = citationsArray?.some((item) => !isChildItem(item)) ?? false;
+  const showAgeFilter = hasChildData && hasAdultData;
 
   const filteredCitations = citationsArray
     ? citationsArray
@@ -143,7 +201,13 @@ export const ReferenceRangesSection: React.FC<{
             item.gender !== genderFilter
           )
             return false;
-          if (!showChildren && isChildItem(item)) return false;
+          if (ageFilter === AgeFilter.Adults && isChildItem(item)) return false;
+          if (
+            ageFilter === AgeFilter.Children &&
+            hasAgeInfo(item) &&
+            !isChildItem(item)
+          )
+            return false;
           return true;
         })
         .slice()
@@ -162,38 +226,23 @@ export const ReferenceRangesSection: React.FC<{
         <SectionTitle icon={BookOpen}>Wartości Referencyjne</SectionTitle>
 
         <div className="flex items-center gap-2 flex-wrap">
-          {hasChildData && (
-            <button
-              onClick={handleToggleShowChildren}
-              className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${
-                showChildren
-                  ? "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
-                  : "bg-slate-100 text-slate-500 border-slate-200 hover:text-slate-700"
-              }`}
-            >
-              {showChildren ? "Ukryj dzieci" : "Pokaż dzieci"}
-            </button>
-          )}
           {showGenderFilter && (
-            <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
-              {GENDER_FILTER_BUTTONS.filter(
+            <FilterSwitcher
+              buttons={GENDER_FILTER_BUTTONS.filter(
                 (btn) =>
                   btn.value === GenderFilter.All ||
                   availableGenders.includes(btn.value),
-              ).map((btn) => (
-                <button
-                  key={btn.value}
-                  onClick={() => handleGenderFilterChange(btn.value)}
-                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-                    genderFilter === btn.value
-                      ? "bg-white text-slate-900 shadow-sm"
-                      : "text-slate-500 hover:text-slate-700"
-                  }`}
-                >
-                  {btn.label}
-                </button>
-              ))}
-            </div>
+              )}
+              value={genderFilter}
+              onChange={handleGenderFilterChange}
+            />
+          )}
+          {showAgeFilter && (
+            <FilterSwitcher
+              buttons={AGE_FILTER_BUTTONS}
+              value={ageFilter}
+              onChange={handleAgeFilterChange}
+            />
           )}
         </div>
       </div>
@@ -208,15 +257,17 @@ export const ReferenceRangesSection: React.FC<{
                 <MutedText key={`msg-${idx}`}>{item.message}</MutedText>
               ))}
               {rangeItems.length > 0 && (
-                <div className="max-h-[60vh] overflow-y-auto scrollbar-hide">
+                <div className="max-h-[60vh] overflow-y-auto">
                   <table className="w-full text-sm border-collapse">
                     <thead>
                       <tr className="border-b border-slate-200 text-left">
-                        <th className={headerCellClass}>Zakres</th>
-                        <th className={headerCellClass}>Wiek</th>
                         {hasGenderedData && (
-                          <th className={headerCellClass}>Płeć</th>
+                          <th className={headerCellClass}>Płeć pacjenta</th>
                         )}
+                        {hasAgeData && (
+                          <th className={headerCellClass}>Wiek pacjenta</th>
+                        )}
+                        <th className={headerCellClass}>Zakres</th>
                         <th className="sticky top-0 bg-white py-2 w-8" />
                       </tr>
                     </thead>
@@ -227,6 +278,7 @@ export const ReferenceRangesSection: React.FC<{
                           item={item}
                           ageUnits={ageUnits}
                           showGenderColumn={hasGenderedData}
+                          showAgeColumn={hasAgeData}
                           isExpanded={expandedRow === idx}
                           onToggle={() =>
                             setExpandedRow(expandedRow === idx ? null : idx)

@@ -10,6 +10,7 @@ import {
   ObservationSkeleton,
   DetailsModalProps,
   DetailsView,
+  AgeFilter,
   GenderFilter,
 } from "../../../components/detailsModal";
 
@@ -33,14 +34,14 @@ export const DetailsModal: React.FC<DetailsModalProps> = ({
   const [genderFilter, setGenderFilter] = useState<GenderFilter>(
     GenderFilter.All,
   );
-  const [showChildren, setShowChildren] = useState(true);
+  const [ageFilter, setAgeFilter] = useState<AgeFilter>(AgeFilter.All);
 
   useEffect(() => {
     setView(DetailsView.Activity);
     setSelectedObsId(null);
     setIsDescriptionExpanded(false);
     setGenderFilter(GenderFilter.All);
-    setShowChildren(true);
+    setAgeFilter(AgeFilter.All);
   }, [detailsId, setSelectedObsId]);
 
   const goToObservation = (obsId: string) => {
@@ -55,23 +56,24 @@ export const DetailsModal: React.FC<DetailsModalProps> = ({
 
   const parentTitle = activityDefinitionData?.title || "usługi";
 
-  const parameters: ObservationDefinitionListItem[] = isMultiObs
-    ? observationList
-    : singleObsId
-      ? [
-          {
-            id: singleObsId,
-            preferredReportName: null,
-          },
-        ]
-      : [];
+  const parameters: ObservationDefinitionListItem[] =
+    observationList.length > 0
+      ? observationList
+      : singleObsId
+        ? [
+            {
+              id: singleObsId,
+              preferredReportName: null,
+            },
+          ]
+        : [];
 
   return (
     <Dialog
       open={!!detailsId}
       onOpenChange={(open: boolean) => !open && setDetailsId(null)}
     >
-      <DialogContent className="w-[min(900px,92vw)] sm:max-w-3xl max-h-[85vh] scrollbar-hide overflow-y-auto backdrop-blur-sm">
+      <DialogContent className="w-[min(900px,92vw)] sm:max-w-3xl max-h-[85vh] overflow-y-auto backdrop-blur-sm">
         {view === DetailsView.Activity ? (
           activityViewLoading ? (
             <ActivitySkeleton />
@@ -100,8 +102,8 @@ export const DetailsModal: React.FC<DetailsModalProps> = ({
             ageUnits={ageUnits}
             genderFilter={genderFilter}
             onGenderFilterChange={setGenderFilter}
-            showChildren={showChildren}
-            onToggleShowChildren={() => setShowChildren((v) => !v)}
+            ageFilter={ageFilter}
+            onAgeFilterChange={setAgeFilter}
             onBack={goBackToActivity}
           />
         )}
