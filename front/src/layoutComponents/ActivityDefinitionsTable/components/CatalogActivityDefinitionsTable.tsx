@@ -83,15 +83,29 @@ const ActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredData.map((item: any) => {
+              filteredData.map((item: any, index: number) => {
                 const isSelected = basket.has(item.id);
                 const loincCode = getLoincOrICDCode(item).loinc;
                 const icd9Code = getLoincOrICDCode(item).icd_9;
                 return (
                   <TableRow
                     key={item.id}
+                    data-row-index={index}
+                    tabIndex={0}
                     onClick={() => setDetailsId(item.id)}
-                    className={`group cursor-pointer transition-colors ${
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        setDetailsId(item.id);
+                      } else if (e.key === "ArrowDown") {
+                        e.preventDefault();
+                        (e.currentTarget.nextElementSibling as HTMLElement | null)?.focus();
+                      } else if (e.key === "ArrowUp") {
+                        e.preventDefault();
+                        (e.currentTarget.previousElementSibling as HTMLElement | null)?.focus();
+                      }
+                    }}
+                    className={`group cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 ${
                       isSelected
                         ? "bg-blue-50/50 hover:bg-blue-50"
                         : "hover:bg-slate-50/50"

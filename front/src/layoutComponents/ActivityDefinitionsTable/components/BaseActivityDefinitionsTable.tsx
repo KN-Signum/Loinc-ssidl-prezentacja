@@ -95,7 +95,7 @@ const BaseActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
               </TableRow>
             ) : (
               <>
-                {filteredData.map((item: any) => {
+                {filteredData.map((item: any, index: number) => {
                   const { loinc, loinc_display, icd_9, icd_9_display } =
                     getLoincOrICDCode(item);
                   const loincTooltipText = getCodeTooltipText({
@@ -115,8 +115,22 @@ const BaseActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
                   return (
                     <TableRow
                       key={item.id}
+                      data-row-index={index}
+                      tabIndex={0}
                       onClick={() => setDetailsId(item.id)}
-                      className="group cursor-pointer transition-colors hover:bg-slate-50"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          setDetailsId(item.id);
+                        } else if (e.key === "ArrowDown") {
+                          e.preventDefault();
+                          (e.currentTarget.nextElementSibling as HTMLElement | null)?.focus();
+                        } else if (e.key === "ArrowUp") {
+                          e.preventDefault();
+                          (e.currentTarget.previousElementSibling as HTMLElement | null)?.focus();
+                        }
+                      }}
+                      className="group cursor-pointer transition-colors hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500"
                     >
                       <TableCell className="text-center"></TableCell>
 
