@@ -1,6 +1,7 @@
 import React from "react";
 import { ObservationDefinition } from "../../../features/observationDefinition/ObservationDefintion";
 import {
+  AgeFilter,
   CitationsData,
   GenderFilter,
   ObservationHeader,
@@ -15,8 +16,8 @@ export interface ObservationDetailsViewProps {
   ageUnits: Record<string, string>;
   genderFilter: GenderFilter;
   onGenderFilterChange: (filter: GenderFilter) => void;
-  showChildren: boolean;
-  onToggleShowChildren: () => void;
+  ageFilter: AgeFilter;
+  onAgeFilterChange: (filter: AgeFilter) => void;
   onBack: () => void;
 }
 
@@ -27,8 +28,8 @@ export const ObservationDetailsView: React.FC<ObservationDetailsViewProps> = ({
   ageUnits,
   genderFilter,
   onGenderFilterChange,
-  showChildren,
-  onToggleShowChildren,
+  ageFilter,
+  onAgeFilterChange,
   onBack,
 }) => (
   <>
@@ -45,8 +46,8 @@ export const ObservationDetailsView: React.FC<ObservationDetailsViewProps> = ({
         ageUnits={ageUnits}
         genderFilter={genderFilter}
         onGenderFilterChange={onGenderFilterChange}
-        showChildren={showChildren}
-        onToggleShowChildren={onToggleShowChildren}
+        ageFilter={ageFilter}
+        onAgeFilterChange={onAgeFilterChange}
       />
     </div>
   </>

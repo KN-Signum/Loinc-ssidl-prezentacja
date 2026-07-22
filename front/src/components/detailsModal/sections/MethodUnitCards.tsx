@@ -6,11 +6,17 @@ import { InfoCard } from "../primitives";
 export const MethodUnitCards: React.FC<{
   observationData: ObservationDefinition | null;
 }> = ({ observationData }) => {
-  if (!observationData?.methodDisplay && !observationData?.permittedUnitDisplay)
-    return null;
+  const hasMethod = Boolean(observationData?.methodDisplay);
+  const hasUnit = Boolean(observationData?.permittedUnitDisplay);
+
+  if (!hasMethod && !hasUnit) return null;
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <div
+      className={`grid grid-cols-1 gap-3 ${
+        hasMethod && hasUnit ? "sm:grid-cols-2" : ""
+      }`}
+    >
       {observationData?.methodDisplay && (
         <InfoCard
           icon={Microscope}

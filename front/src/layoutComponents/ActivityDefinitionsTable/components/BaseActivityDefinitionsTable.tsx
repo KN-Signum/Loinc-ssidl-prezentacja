@@ -50,12 +50,15 @@ const getCodeTooltipText = ({
 };
 
 const BaseActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
-  const {filteredData, getLoincOrICDCode} = useTableFiltering({
+  const { filteredData, getLoincOrICDCode } = useTableFiltering({
     listData: props.listData,
     searchTerm: "",
   });
   const { setDetailsId } = useAppStore();
-  const placeholderRowsCount = Math.max(0, EXPECTED_ROWS_PER_PAGE - filteredData.length);
+  const placeholderRowsCount = Math.max(
+    0,
+    EXPECTED_ROWS_PER_PAGE - filteredData.length,
+  );
 
   return (
     <Card className="border-slate-200 shadow-sm">
@@ -93,7 +96,8 @@ const BaseActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
             ) : (
               <>
                 {filteredData.map((item: any) => {
-                  const { loinc, loinc_display, icd_9, icd_9_display } = getLoincOrICDCode(item);
+                  const { loinc, loinc_display, icd_9, icd_9_display } =
+                    getLoincOrICDCode(item);
                   const loincTooltipText = getCodeTooltipText({
                     code: loinc,
                     display: loinc_display,
@@ -112,10 +116,9 @@ const BaseActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
                     <TableRow
                       key={item.id}
                       onClick={() => setDetailsId(item.id)}
-                      className={`group cursor-pointer transition-colors hover:bg-slate-50`}
+                      className="group cursor-pointer transition-colors hover:bg-slate-50"
                     >
-                      <TableCell className="text-center">
-                      </TableCell>
+                      <TableCell className="text-center"></TableCell>
 
                       <TableCell className="align-middle">
                         <span
@@ -172,11 +175,16 @@ const BaseActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
                     </TableRow>
                   );
                 })}
-                {Array.from({ length: placeholderRowsCount }).map((_, index) => (
-                  <TableRow key={`placeholder-${index}`} className="hover:bg-transparent">
-                    <TableCell colSpan={4} className="h-[49px]" />
-                  </TableRow>
-                ))}
+                {Array.from({ length: placeholderRowsCount }).map(
+                  (_, index) => (
+                    <TableRow
+                      key={`placeholder-${index}`}
+                      className="hover:bg-transparent"
+                    >
+                      <TableCell colSpan={4} className="h-[49px]" />
+                    </TableRow>
+                  ),
+                )}
               </>
             )}
           </TableBody>
@@ -208,3 +216,4 @@ const BaseActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
   );
 };
 export default BaseActivityDefinitionsTable;
+

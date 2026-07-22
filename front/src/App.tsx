@@ -39,7 +39,9 @@ export default function App() {
   const isMultiObs = dataIsForCurrentId && obsIds.length > 1;
 
   const specimenQuery = useGetSpecimenDefinition(detailsId);
-  const observationListQuery = useGetObservationDefinitionList(isMultiObs ? detailsId : null);
+  const observationListQuery = useGetObservationDefinitionList(
+    obsIds.length > 0 ? detailsId : null,
+  );
   const observationQuery = useGetObservationDefinition(selectedObsId);
   const citationsQuery = useGetCitations(selectedObsId);
 
@@ -47,7 +49,7 @@ export default function App() {
     !dataIsForCurrentId ||
     activityDefinitionQuery.loading ||
     specimenQuery.loading ||
-    (isMultiObs && observationListQuery.loading);
+    (obsIds.length > 0 && observationListQuery.loading);
   const observationViewLoading =
     observationQuery.loading || citationsQuery.loading;
 
