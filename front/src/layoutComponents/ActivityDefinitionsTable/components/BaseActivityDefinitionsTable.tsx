@@ -1,4 +1,4 @@
-import { Activity, Info, ChevronLeft, ChevronRight } from "lucide-react";
+import { Activity, ChevronLeft, ChevronRight } from "lucide-react";
 import { Badge } from "../../../components/ui/badge";
 import { Card } from "../../../components/ui/card";
 import {
@@ -70,25 +70,24 @@ const BaseActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
               <TableHead className="w-[350px]">Nazwa Badania</TableHead>
               <TableHead className="w-[180px]">Kod (LOINC)</TableHead>
               <TableHead className="w-[120px]">Kod ICD-9</TableHead>
-              <TableHead className="text-right"> </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {props.listLoading && filteredData.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={6}
+                  colSpan={4}
                   className="h-32 text-center text-slate-500"
                 >
                   Ładowanie definicji...
                 </TableCell>
               </TableRow>
             ) : props.listError ? (
-              <TableErrorState error={props.listError} colSpan={6} />
+              <TableErrorState error={props.listError} colSpan={4} />
             ) : filteredData.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={6}
+                  colSpan={4}
                   className="h-32 text-center text-slate-500"
                 >
                   Nie znaleziono badań.
@@ -96,7 +95,7 @@ const BaseActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
               </TableRow>
             ) : (
               <>
-                {filteredData.map((item: any) => {
+                {filteredData.map((item: any, index: number) => {
                   const { loinc, loinc_display, icd_9, icd_9_display } =
                     getLoincOrICDCode(item);
                   const loincTooltipText = getCodeTooltipText({
@@ -116,7 +115,22 @@ const BaseActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
                   return (
                     <TableRow
                       key={item.id}
-                      className={`group transition-colors hover:bg-slate-50`}
+                      data-row-index={index}
+                      tabIndex={0}
+                      onClick={() => setDetailsId(item.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          setDetailsId(item.id);
+                        } else if (e.key === "ArrowDown") {
+                          e.preventDefault();
+                          (e.currentTarget.nextElementSibling as HTMLElement | null)?.focus();
+                        } else if (e.key === "ArrowUp") {
+                          e.preventDefault();
+                          (e.currentTarget.previousElementSibling as HTMLElement | null)?.focus();
+                        }
+                      }}
+                      className="group cursor-pointer transition-colors hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500"
                     >
                       <TableCell className="text-center"></TableCell>
 
@@ -172,18 +186,6 @@ const BaseActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
                           </TooltipContent>
                         </Tooltip>
                       </TableCell>
-
-                      <TableCell className="text-right align-middle">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setDetailsId(item.id)}
-                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                        >
-                          <Info className="mr-2 h-4 w-4" />
-                          Szczegóły
-                        </Button>
-                      </TableCell>
                     </TableRow>
                   );
                 })}
@@ -193,7 +195,7 @@ const BaseActivityDefinitionsTable = (props: ActivityDefinitionTableProps) => {
                       key={`placeholder-${index}`}
                       className="hover:bg-transparent"
                     >
-                      <TableCell colSpan={6} className="h-[49px]" />
+                      <TableCell colSpan={4} className="h-[49px]" />
                     </TableRow>
                   ),
                 )}

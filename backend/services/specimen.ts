@@ -1,7 +1,7 @@
 import { extractCanonicals } from "./fhir-service.js";
 
-const SPECIMEN_REQUIREMENT_COMMENT_EXTENSION_URL =
-  "http://loinc-ssidl.umed.pl/fhir/ig/ssidl/StructureDefinition/ssidl-activityDefinition-specimenRequirementComment";
+const SPECIMEN_REQUIREMENT_COMMENT_EXTENSION_URL_FRAGMENT =
+  "ssidl-activityDefinition-specimenRequirementComment";
 
 interface ActivityDefinition {
   specimenRequirement?: any[];
@@ -31,14 +31,13 @@ export function getSpecimenDefinitionsFromActivityDefinition(
 export function getSpecimenRequirementCommentFromActivityDefinition(
   activityDefinition: ActivityDefinition,
 ): string | null {
-  const extension = activityDefinition._specimenRequirement?.[0]?.extension?.[0];
+  const extension = activityDefinition._specimenRequirement
+    ?.flatMap((entry) => entry.extension ?? [])
+    .find(
+      (ext) =>
+        typeof ext.url === "string" &&
+        ext.url.includes(SPECIMEN_REQUIREMENT_COMMENT_EXTENSION_URL_FRAGMENT),
+    );
 
-  if (
-    extension?.url !== SPECIMEN_REQUIREMENT_COMMENT_EXTENSION_URL ||
-    !extension?.valueString
-  ) {
-    return null;
-  }
-
-  return extension.valueString;
+  return extension?.valueString || null;
 }
