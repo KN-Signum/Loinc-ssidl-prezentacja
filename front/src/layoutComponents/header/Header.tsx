@@ -21,11 +21,11 @@ const Header = () => {
         <div className="flex-1 flex justify-center min-w-0 px-2">
           {isPreviewMode && <BaseSwitcher />}
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-1">
           <img
             src="/hl7polska.png"
             alt="Polskie Stowarzyszenie HL7"
-            className="h-8 w-auto object-contain hidden sm:block"
+            className="h-11 w-auto object-contain hidden sm:block"
           />
           <ShowSettings />
         </div>
